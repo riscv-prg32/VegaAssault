@@ -1,0 +1,78 @@
+// EDUCATIONAL: Use assertions to report violated behavioral invariants in a host process.
+#include <assert.h>
+// EDUCATIONAL: Print a concise host test result.
+#include <stdio.h>
+// EDUCATIONAL: Include the cartridge translation unit to inspect fixed internal state without changing its ABI.
+#include "../src/game.c"
+// EDUCATIONAL: Mock input and count portable audio/draw effects without requiring firmware.
+static uint32_t test_input;
+// EDUCATIONAL: Record music events and boss draws for pause verification.
+static int audio_events, boss_draws;
+// EDUCATIONAL: Precondition: host test sets input; no state change; O(1); replaces portable input read.
+uint32_t prg32_input_read(void){return test_input;}
+// EDUCATIONAL: Precondition: valid voice parameters; records one effect; O(1); mocks portable note-on.
+void prg32_audio_note_on(uint8_t c,uint8_t i,uint8_t n,uint8_t v){(void)c;(void)i;(void)n;(void)v;audio_events++;}
+// EDUCATIONAL: Precondition: valid channel; records one effect; O(1); mocks portable note-off.
+void prg32_audio_note_off(uint8_t c){(void)c;audio_events++;}
+// EDUCATIONAL: Precondition: sample arguments from game; no sound output; O(1); mocks panned sample playback.
+int prg32_audio_play_sample_pan(uint16_t s,uint8_t v,uint16_t p,int8_t pan){(void)s;(void)v;(void)p;(void)pan;return 0;}
+// EDUCATIONAL: Precondition: RGB565 color; no framebuffer effect; O(1); mocks portable clear.
+void prg32_gfx_clear(uint16_t c){(void)c;}
+// EDUCATIONAL: Precondition: integer rectangle and color; no framebuffer effect; O(1); mocks portable rectangle.
+void prg32_gfx_rect(int x,int y,int w,int h,uint16_t c){(void)x;(void)y;(void)w;(void)h;(void)c;}
+// EDUCATIONAL: Precondition: valid string; no output; O(1); mocks portable text.
+void prg32_gfx_text8(int x,int y,const char*s,uint16_t f,uint16_t b){(void)x;(void)y;(void)s;(void)f;(void)b;}
+// EDUCATIONAL: Precondition: sprite pointer; no output; O(1); mocks portable 16x16 sprite.
+void prg32_sprite_draw_16x16(int x,int y,const uint16_t*s){(void)x;(void)y;(void)s;}
+// EDUCATIONAL: Precondition: sprite pointer; no output; O(1); mocks portable 24x24 sprite.
+void prg32_sprite_draw_24x24(int x,int y,const uint16_t*s){(void)x;(void)y;(void)s;}
+// EDUCATIONAL: Precondition: valid frame; counts boss sprites; O(1); mocks portable frame rendering.
+void prg32_sprite_draw_frame(int x,int y,int w,int h,const uint16_t*s,uint32_t f,uint16_t t){(void)x;(void)y;(void)h;(void)s;(void)f;(void)t;if(w==48)boss_draws++;}
+// EDUCATIONAL: Precondition: none; resets cartridge and mocked input; bounded by entity capacity; calls game init and new-game audio.
+static void reset(void){test_input=0;grendizer_c_init();new_game();begin_play();old_input=0;}
+// EDUCATIONAL: Precondition: host execution; changes test/game state and prints results; bounded loops; all ABI effects are mocked.
+int main(void){
+// EDUCATIONAL: Reserve snapshot counters for pause and deterministic replay assertions.
+int i,f,t,r,m,events;uint32_t seed;Star snapshot[MAX_STARS];
+// EDUCATIONAL: Enter combat and pause with active cooldown and invulnerability.
+reset();screw_cd=5;harken_cd=9;thunder_cd=12;invuln=50;timer=29;test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_PAUSE);
+// EDUCATIONAL: Snapshot simulation clocks, random seed, and audio count after pause entry.
+f=frame;t=timer;r=stage_scroll;m=music_tick;seed=rng;events=audio_events;
+// EDUCATIONAL: Wait longer than damage protection; pause must freeze all sampled state.
+test_input=0;for(i=0;i<200;i++)grendizer_c_update();assert(frame==f&&timer==t&&stage_scroll==r&&music_tick==m&&rng==seed&&audio_events==events);assert(invuln==50&&screw_cd==5&&harken_cd==9&&thunder_cd==12);
+// EDUCATIONAL: Resume without resetting the combat timer.
+test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_PLAY&&timer==29);
+// EDUCATIONAL: The paused boss remains visible beneath the overlay.
+begin_boss();previous_state=ST_BOSS;state=ST_PAUSE;boss_draws=0;grendizer_c_draw();assert(boss_draws==1);
+// EDUCATIONAL: A lethal final-boss hit and hostile shot coincide; victory must win this frame transaction.
+reset();stage=3;begin_boss();boss_hp=1;lives=1;shot_add(W_SCREW,boss_x,boss_y+7,0,-7,1,35);enemy_fire(px+4,py,0,3,0);grendizer_c_update();assert(state==ST_WIN&&lives==1);
+// EDUCATIONAL: Losing the last life to the final escaping enemy must not start a boss.
+reset();clear_entities();lives=1;stage_kills=18;spawn_enemy(0,1,40,150);grendizer_c_update();assert(state==ST_OVER&&lives==0);
+// EDUCATIONAL: Harken reverses once then keeps moving inward on following frames.
+reset();clear_entities();shot_add(W_HARKEN,100,150,2,0,2,28);update_shots();assert(shots[0].dx==-2);update_shots();assert(shots[0].dx==-2&&shots[0].x==100);
+// EDUCATIONAL: A crawler at the right edge must turn back into the viewport.
+reset();clear_entities();spawn_enemy(0,2,296,30);enemies[0].dx=1;update_enemies();assert(enemies[0].dx==-1);
+// EDUCATIONAL: An 80-tick cadence must not fire at phase 16, unlike an invalid bit mask.
+reset();clear_entities();spawn_enemy(0,1,40,30);enemies[0].phase=15;update_enemies();assert(!eshots[0].active);enemies[0].phase=79;update_enemies();assert(eshots[0].active);
+// EDUCATIONAL: START remains detectable while the player holds A on the title.
+reset();state=ST_TITLE;old_input=PRG32_BTN_A;test_input=PRG32_BTN_A|PRG32_BTN_START;grendizer_c_update();assert(state==ST_STAGE_INTRO);
+// EDUCATIONAL: Capture initial star state, then disturb the attract loop before restarting.
+reset();new_game();for(i=0;i<MAX_STARS;i++)snapshot[i]=stars[i];seed=rng;for(i=0;i<77;i++)update_stars();frame=1234;new_game();assert(frame==0&&rng==seed);
+// EDUCATIONAL: Identical new games must restore the same star positions and speeds.
+for(i=0;i<MAX_STARS;i++)assert(stars[i].x==snapshot[i].x&&stars[i].y==snapshot[i].y&&stars[i].s==snapshot[i].s);
+// EDUCATIONAL: Long boss motion remains bounded even when periodic vertical steps accumulate.
+reset();stage=2;begin_boss();for(i=0;i<10000;i++){frame++;update_boss();assert(boss_y>=24&&boss_y<=80);}
+// EDUCATIONAL: Boot must enter attract and accept two distinct START presses to begin a run.
+grendizer_c_init();test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_TITLE);test_input=0;grendizer_c_update();test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_STAGE_INTRO);
+// EDUCATIONAL: Each stage introduction and docking sequence completes within its documented tick budget.
+test_input=0;for(i=0;i<76;i++)grendizer_c_update();assert(state==ST_PLAY);stage=2;start_stage_intro();for(i=0;i<76;i++)grendizer_c_update();assert(state==ST_TRANSFORM);for(i=0;i<121;i++)grendizer_c_update();assert(state==ST_PLAY&&spazer_mode);
+// EDUCATIONAL: Clamp movement to the playfield and verify each standard weapon maps to its input.
+reset();px=3;py=116;update_play_input(PRG32_BTN_LEFT|PRG32_BTN_UP|PRG32_BTN_A);assert(px==3&&py==116&&shots[0].kind==W_SCREW);clear_entities();update_play_input(PRG32_BTN_B);assert(shots[0].kind==W_HARKEN&&shots[1].kind==W_HARKEN);clear_entities();energy=5;update_play_input(PRG32_BTN_A|PRG32_BTN_B);assert(energy==2&&shots[0].kind==W_THUNDER&&shots[1].kind==W_THUNDER);
+// EDUCATIONAL: Every boss advances to the following stage or victory through a real projectile collision.
+for(i=1;i<=3;i++){reset();stage=i;begin_boss();boss_hp=1;shot_add(W_SCREW,boss_x,boss_y+7,0,-7,1,35);grendizer_c_update();assert(state==(i==3?ST_WIN:ST_STAGE_INTRO));}
+// EDUCATIONAL: Both terminal screens recover to title on a fresh START press.
+state=ST_OVER;old_input=0;test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_TITLE);state=ST_WIN;old_input=0;grendizer_c_update();assert(state==ST_TITLE);
+// EDUCATIONAL: Report successful regression checks to the test runner.
+puts("Gameplay regression tests: PASS");return 0;
+// EDUCATIONAL: End the host regression entry point.
+}

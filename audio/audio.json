@@ -1,0 +1,65 @@
+{
+  "samples": [
+    {
+      "file": "lead.raw",
+      "base_note": 60,
+      "loop": true
+    },
+    {
+      "file": "arp.raw",
+      "base_note": 60,
+      "loop": true
+    },
+    {
+      "file": "bass.raw",
+      "base_note": 48,
+      "loop": true
+    },
+    {
+      "file": "blast.raw",
+      "base_note": 60,
+      "loop": false
+    },
+    {
+      "file": "boom.raw",
+      "base_note": 48,
+      "loop": false
+    },
+    {
+      "file": "harken.raw",
+      "base_note": 60,
+      "loop": false
+    },
+    {
+      "file": "thunder.raw",
+      "base_note": 48,
+      "loop": false
+    },
+    {
+      "file": "dock.raw",
+      "base_note": 48,
+      "loop": false
+    }
+  ],
+  "instruments": [
+    {
+      "sample_id": 0,
+      "default_volume": 118,
+      "default_pan": -42,
+      "sustain": 255
+    },
+    {
+      "sample_id": 1,
+      "default_volume": 108,
+      "default_pan": 42,
+      "sustain": 255
+    },
+    {
+      "sample_id": 2,
+      "default_volume": 100,
+      "default_pan": 0,
+      "sustain": 255
+    }
+  ],
+  "tracks": []
+}

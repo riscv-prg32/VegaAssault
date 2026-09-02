@@ -1,0 +1,13 @@
+{
+  "abi": "prg32-metadata-1.0",
+  "id": "org.riscv-prg32.grendizer-vega-assault-86",
+  "title": "Grendizer: Vega Assault '86",
+  "version": "1.1.0",
+  "summary": "A compact 1980s-style PRG32 arcade shooter fan game with animated Spazer docking, multiple weapons, bosses, stereo chiptune music and original pixel art.",
+  "description": "Defend Earth, dock with Spazer and take the battle to Vega across three arcade stages. Features Screw Crusher, Double Harken and Space Thunder attacks, animated transformations, multiple enemy robot families, stage-specific bosses, attract mode, original RGB565 sprites, and original stereo chiptune/SFX. Unofficial, non-commercial fan work; no ripped anime/game assets or copyrighted soundtrack recordings are included.",
+  "authors": ["PRG32 Grendizer fan-game contributors"],
+  "license": "MIT",
+  "tags": ["arcade", "shooter", "retro", "risc-v", "prg32", "fan-game", "stereo"],
+  "assets": {"icon": "icon.png", "splash": "splash.png"},
+  "architectures": []
+}

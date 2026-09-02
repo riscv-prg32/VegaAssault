@@ -1,0 +1,21 @@
+# Graphics and Sprite Pipeline
+
+Sprites use one-byte palette indices into a 14-entry RGB565 palette. A fixed 48x24 RGB565 scratch buffer is decoded before each draw. RGB565 stores red in five bits, green in six, and blue in five, giving a 16-bit pixel representation well suited to embedded displays. A designated value is used for transparency. Terrain and backgrounds are preferentially generated with primitives rather than full-screen bitmaps, preserving cartridge space.
+
+`tools/generate_assets.py` is the authoritative art generator. It produces `src/sprites.c`, `src/sprites.h`, and `assets/sprite-sheet.png`. Generated arrays are derived artifacts: pedagogical modifications should normally begin in the generator, then regenerate and verify the outputs.
+
+This pipeline illustrates a general systems principle: expensive authoring representations can be transformed offline into simple runtime representations. The microcontroller spends cycles drawing pixels rather than parsing image formats.
+
+## 2026 pixel-art redesign
+
+The second-generation art pass deliberately improves visual fidelity without changing the sprite dimensions. The 24 frames retain their established 16x16, 24x24, 32x24, and 48x24 envelopes, so collision assumptions remain stable. The later palette-index conversion reduces source pixel storage from 30,080 to 15,040 bytes, plus a 28-byte palette and 2,304-byte decode buffer. Grendizer now uses a stronger horned crown silhouette, layered blue armor, a red chest motif, light forearms, highlighted leg armor, and pose-specific arm geometry. The Spazer uses a compact red/white/blue flying-body silhouette and staged docking geometry. Enemy families are distinguished by blade, crawler, horned-beast, and gunner profiles, while each boss has a different weapon silhouette and core treatment.
+
+This is a constrained-art exercise rather than an attempt to reproduce animation cels. Every runtime pixel is generated locally by `tools/generate_assets.py`. The generator is therefore both the art source and an executable specification of the palette, geometry, animation frames, and memory footprint. The Store icon and splash are generated from the same vocabulary, ensuring visual coherence and reproducibility.
+
+### Intellectual-property boundary
+
+The project is an unofficial, non-commercial educational fan work. Its visual language intentionally makes the subject recognizable, but it does not contain traced frames, manga scans, official logos, extracted game sprites, promotional art, or soundtrack recordings. Character names and recognizable fictional designs remain the property of their respective rights holders; original project artwork and code do not confer rights over those underlying properties.
+
+## Decode contract
+
+Palette storage is a project design decision. The inspected PRG32 `prg32_sprite_draw_frame` implementation synchronously consumes RGB565 pixels before returning; that observed behavior permits buffer reuse. `sprite_draw` accepts only generated frames up to 48x24 and performs O(width × height) integer lookups without allocation. White (`0xffff`) remains transparent. Pixel-by-pixel comparison of all 24 decoded arrays and the regenerated preview found no artwork differences. The extra decode pass needs frame-time verification on each host.

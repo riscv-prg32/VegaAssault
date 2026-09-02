@@ -53,3 +53,9 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# Local Python caches and reproducible build/release outputs
+__pycache__/
+*.py[cod]
+/build/
+/dist/
