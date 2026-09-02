@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """Generate compact, original RGB565 fan-game sprites for PRG32.
 
-The art is drawn procedurally for this project. It evokes the recognizable
-Grendizer/Spazer visual vocabulary without copying production frames or scans.
+The art is drawn procedurally for this project using classic mecha conventions.
+Armor contours, palettes and insignia are project-authored, without traced references.
 """
 from pathlib import Path
 from PIL import Image, ImageDraw
 
 # RGB565 palette: transparency key remains white to match the existing game.
-W=0xFFFF; K=0x0000; R=0xF800; DR=0x9000; B=0x001F; DB=0x0010; C=0x07FF
-Y=0xFFE0; G=0x07E0; M=0xF81F; D=0x4208; S=0x8410; O=0xFD20; LG=0xC618
+W=0xFFFF; K=0x0842; R=0xD986; DR=0x7805; B=0x32D5; DB=0x1129; C=0x6F5E
+Y=0xFF0C; G=0x5D4C; M=0xAAB6; D=0x2948; S=0x7493; O=0xEBA7; LG=0xD73A
 
 def blank(w,h): return [[W]*w for _ in range(h)]
 def px(a,x,y,c):
@@ -26,80 +26,195 @@ def line(a,x0,y0,x1,y1,c):
         if e2>=dy: e+=dy; x0+=sx
         if e2<=dx: e+=dx; y0+=sy
 
+def poly(a, points, color):
+    """Rasterize an integer armor contour offline; no runtime PRG32 calls or allocation."""
+    mask = Image.new('1', (len(a[0]), len(a)))
+    ImageDraw.Draw(mask).polygon(points, fill=1)
+    for y in range(len(a)):
+        for x in range(len(a[0])):
+            if mask.getpixel((x, y)):
+                a[y][x] = color
+
+
+def panel(a, points, color):
+    """Fill a closed armor plate and ink its edge; mutates only the supplied frame."""
+    poly(a, points, color)
+    for start, end in zip(points, points[1:] + points[:1]):
+        line(a, *start, *end, K)
+
+
+def flight_shell(a, step=3):
+    """Layer original swept docking wings onto a 32x24 frame in four fixed stages."""
+    span = (0, 8, 12, 15)[step]
+    if not span:
+        return
+    for side in (-1, 1):
+        def p(x, y):
+            return (15 + side*x if side < 0 else 16 + side*x, y)
+        panel(a, [p(3, 13), p(span, 10), p(span, 16), p(7, 20), p(2, 18)], R)
+        line(a, *p(4, 14), *p(span-1, 12), LG)
+        line(a, *p(5, 17), *p(span-1, 15), DR)
+        line(a, *p(6, 19), *p(span-1, 17), DB)
+        px(a, *p(7, 18), C)
+    panel(a, [(10, 14), (21, 14), (23, 17), (18, 20), (13, 20), (8, 17)], DB)
+    line(a, 11, 15, 20, 15, LG)
+    line(a, 12, 17, 19, 17, B)
+    px(a, 14, 18, C); px(a, 17, 18, C)
+
+
 def robot_frame(variant=0, spazer=False, pose=0):
-    w,h=(32,24) if spazer else (24,24); a=blank(w,h); cx=w//2
-    # Gold horns/crown create the unmistakable silhouette while all pixels are original.
-    line(a,cx-3,2,cx-8,0,Y); line(a,cx+3,2,cx+8,0,Y); px(a,cx-7,1,O); px(a,cx+7,1,O)
-    rect(a,cx-4,1,8,5,DB); rect(a,cx-2,0,4,2,R); rect(a,cx-1,2,2,2,Y)
-    rect(a,cx-4,4,8,2,LG); rect(a,cx-2,4,4,1,C)
-    # Broad dark-blue shoulders, white forearms and red chest chevron.
-    rect(a,cx-7,7,14,3,DB); rect(a,cx-9,8,3,4,B); rect(a,cx+6,8,3,4,B)
-    rect(a,cx-5,8,10,9,B); rect(a,cx-3,9,6,5,R); px(a,cx-2,10,Y); px(a,cx+1,10,Y)
-    rect(a,cx-2,13,4,2,LG); rect(a,cx-1,13,2,1,C)
-    if pose==1:
-        line(a,cx-8,10,cx-11,7,LG); line(a,cx+8,10,cx+11,7,LG); px(a,cx-11,6,Y); px(a,cx+11,6,Y)
-    elif pose==2:
-        line(a,cx-8,11,cx-11,14,LG); line(a,cx+8,11,cx+11,14,LG); px(a,cx-11,15,Y); px(a,cx+11,15,Y)
-    else:
-        rect(a,cx-9,11,3,5,LG); rect(a,cx+6,11,3,5,LG); px(a,cx-8,16,Y); px(a,cx+8,16,Y)
-    # Split armored legs with red boots and light-blue highlights.
-    rect(a,cx-5,16,4,6,DB); rect(a,cx+1,16,4,6,DB); px(a,cx-4,17,C); px(a,cx+3,17,C)
-    rect(a,cx-6,21,5,2,R); rect(a,cx+1,21,5,2,R); px(a,cx-6,23,K); px(a,cx+5,23,K)
-    if variant: px(a,cx-5,8,Y); px(a,cx+4,8,Y)
+    """Author a 24px mecha pose with inked plates; preserve the game's frame envelopes."""
+    a = blank(24, 24)
+    # Split boots, hip joints and tapered greaves keep the pose readable at native size.
+    for x in (7, 13):
+        panel(a, [(x, 15), (x+3, 15), (x+4, 22), (x-1, 23), (x-1, 20)], DB)
+        rect(a, x, 17, 2, 3, LG); px(a, x+2, 18, S)
+        rect(a, x, 21, 3, 2, R); px(a, x, 21, O)
+    panel(a, [(7, 12), (16, 12), (16, 16), (12, 18), (7, 16)], D)
+    line(a, 9, 15, 14, 15, LG); rect(a, 11, 15, 2, 2, O)
+    # Faceted shoulders and substantial gauntlets replace single-pixel stick arms.
+    for side in (-1, 1):
+        def p(x, y):
+            return (11-x if side < 0 else 12+x, y)
+        panel(a, [p(4, 7), p(7, 6), p(10, 9), p(7, 12), p(4, 10)], DB)
+        line(a, *p(5, 8), *p(7, 7), B)
+        y = (12, 7, 13)[pose]
+        panel(a, [p(7, y), p(9, y-1), p(11, y+2), p(10, y+4), p(7, y+3)], S)
+        line(a, *p(8, y), *p(9, y+2), LG)
+        line(a, *p(8, y+3), *p(10, y+3), DB)
+    panel(a, [(7, 7), (16, 7), (17, 11), (14, 15), (9, 15), (6, 11)], DB)
+    # An original split diagonal breastplate surrounds a narrow central reactor.
+    poly(a, [(7, 8), (10, 9), (10, 12), (8, 11)], R)
+    poly(a, [(16, 8), (13, 9), (13, 12), (15, 11)], R)
+    px(a, 8, 8, O); px(a, 15, 8, O)
+    rect(a, 11, 9, 2, 4, S); rect(a, 11, 10, 2, 1, C if variant else LG)
+    line(a, 9, 14, 14, 14, B)
+    # Swept cheek fins, a split crest and recessed eyes suggest cel-drawn machinery.
+    panel(a, [(8, 1), (15, 1), (17, 4), (14, 7), (9, 7), (6, 4)], DB)
+    for side in (-1, 1):
+        def p(x, y):
+            return (11-x if side < 0 else 12+x, y)
+        poly(a, [p(4, 3), p(8, 2), p(9, 0), p(8, 4), p(5, 5)], O)
+        line(a, *p(5, 3), *p(8, 2), Y)
+    rect(a, 10, 0, 1, 3, R); rect(a, 13, 0, 1, 3, R)
+    line(a, 9, 3, 10, 3, C); line(a, 13, 3, 14, 3, C)
+    poly(a, [(9, 5), (11, 4), (14, 5), (12, 7)], LG)
+    px(a, 12, 5, S); px(a, 12, 6, D)
     if spazer:
-        # Compact red/white flying saucer wraps around the robot without a full bitmap.
-        line(a,1,14,8,11,R); line(a,30,14,23,11,R); rect(a,5,13,22,2,LG); rect(a,1,15,30,2,R)
-        rect(a,4,17,24,2,DB); line(a,1,15,0,18,Y); line(a,30,15,31,18,Y); px(a,7,18,C); px(a,24,18,C)
+        wide = blank(32, 24)
+        for y, row in enumerate(a):
+            wide[y][4:28] = row
+        flight_shell(wide)
+        return wide
     return a
+
 
 def saucer(kind=0, anim=0):
-    a=blank(16,16); col=[M,G,O,C][kind%4]
-    rect(a,6,3,4,2,C); rect(a,4,5,8,2,DB); rect(a,2,7,12,2,col); rect(a,0,9,16,2,DB)
-    rect(a,2,11,12,2,col); px(a,1,8,Y); px(a,14,8,Y); px(a,7,6,LG); px(a,8,6,LG)
-    if anim: px(a,4,13,O); px(a,11,13,O); px(a,5,14,Y); px(a,10,14,Y)
+    """Draw an elliptical scout with a recessed canopy and alternating engine lights."""
+    a = blank(16, 16); col = [M, G, O, C][kind % 4]
+    panel(a, [(5, 3), (10, 3), (12, 7), (3, 7)], DB)
+    line(a, 6, 4, 9, 4, C); px(a, 5, 5, LG)
+    panel(a, [(3, 6), (12, 6), (15, 9), (12, 12), (3, 12), (0, 9)], col)
+    line(a, 4, 7, 11, 7, LG); line(a, 2, 9, 13, 9, DB)
+    line(a, 4, 11, 11, 11, D)
+    for x in (4, 11):
+        px(a, x, 10, C if anim else O)
+        if anim:
+            line(a, x, 12, x, 14, O); px(a, x, 13, Y)
     return a
+
 
 def enemy_robot(kind=0, anim=0):
-    a=blank(16,16); c=[M,G,O,R][kind%4]; sh=[DR,D,DR,DB][kind%4]
-    if kind==0: # blade robot
-        line(a,4,4,2,1,Y); line(a,11,4,13,1,Y); rect(a,5,3,6,4,c); rect(a,4,7,8,6,sh)
-        line(a,4,8,0,6,LG); line(a,11,8,15,6,LG); rect(a,5,13,2,3,c); rect(a,9,13,2,3,c)
-    elif kind==1: # crawler
-        rect(a,4,3,8,3,DB); rect(a,3,6,10,5,c); rect(a,1,10,14,4,D); rect(a,2,11,12,2,K)
-        px(a,6,4,C); px(a,9,4,C); px(a,1,13,S); px(a,14,13,S)
-    elif kind==2: # horn beast
-        line(a,5,4,2,0,Y); line(a,10,4,13,0,Y); rect(a,5,3,6,5,c); rect(a,3,8,10,5,DB)
-        rect(a,1,9,3,3,c); rect(a,12,9,3,3,c); rect(a,3,13,3,3,c); rect(a,10,13,3,3,c)
-    else: # gunner
-        rect(a,4,2,8,5,DB); px(a,6,4,C); px(a,9,4,C); rect(a,3,7,10,6,c)
-        rect(a,0 if not anim else 1,8,4,2,Y); rect(a,12 if not anim else 11,8,4,2,Y); rect(a,5,13,2,3,DB); rect(a,9,13,2,3,DB)
-    if anim: px(a,7,1,Y); px(a,8,1,Y)
+    """Build four original 16px enemy classes with articulated two-frame motion."""
+    a = blank(16, 16); col = [M, G, O, R][kind]
+    if kind == 1:
+        panel(a, [(4, 2), (10, 2), (12, 7), (3, 7)], DB)
+        line(a, 5, 4, 9, 4, C)
+        panel(a, [(3, 6), (11, 6), (14, 10), (1, 10)], col)
+        line(a, 4, 7, 9, 7, LG)
+        panel(a, [(2, 10), (13, 10), (15, 12), (13, 15), (2, 15), (0, 12)], D)
+        line(a, 2, 12, 13, 12, K)
+        for x in range(2+anim, 14, 3):
+            px(a, x, 13, LG)
+        return a
+    for x, dy in ((4, anim), (10, 1-anim)):
+        rect(a, x, 11, 3, 4, K); rect(a, x, 12, 2, 2, D)
+        rect(a, x-1, 14-dy, 3, 1, col)
+    panel(a, [(4, 6), (11, 6), (12, 10), (9, 13), (6, 13), (3, 10)], col)
+    line(a, 5, 7, 7, 9, LG); line(a, 10, 7, 8, 9, D)
+    rect(a, 7, 10, 2, 2, DB)
+    panel(a, [(5, 2), (10, 2), (11, 5), (8, 7), (4, 5)], D)
+    line(a, 6, 4, 9, 4, C)
+    if kind == 0:
+        line(a, 5, 2, 3, 0, col); line(a, 10, 2, 12, 0, col)
+        for x in (2, 12):
+            rect(a, x, 7, 2, 4, DB)
+        line(a, 0, 4+anim, 2, 10, LG); line(a, 15, 4+anim, 13, 10, LG)
+        px(a, 0, 4+anim, C); px(a, 15, 4+anim, C)
+    elif kind == 2:
+        poly(a, [(4, 4), (1, 0), (2, 5), (5, 6)], Y)
+        poly(a, [(11, 4), (14, 0), (13, 5), (10, 6)], O)
+        for x in (0, 12):
+            panel(a, [(x, 7), (x+3, 7), (x+3, 11+anim), (x, 12+anim)], col)
+            px(a, x+1, 8, LG)
+    else:
+        rect(a, 6, 1, 4, 1, R)
+        for x in (0, 12):
+            panel(a, [(x, 7+anim), (x+3, 7+anim), (x+3, 11), (x, 11)], D)
+            line(a, x+1, 8+anim, x+2, 8+anim, LG)
+            px(a, x+1, 10, O if anim else K)
     return a
+
 
 def boss(kind=0, anim=0):
-    a=blank(48,24); c=[M,O,R][kind]; sh=[DR,DR,DB][kind]
-    # Three bosses share a large arcade silhouette but differ in weapons and cores.
-    line(a,8,7,3,3,Y); line(a,39,7,44,3,Y); rect(a,8,6,32,11,sh); rect(a,12,4,24,12,c)
-    rect(a,17,1,14,5,DB); rect(a,21,0,6,3,Y); rect(a,20,8,8,5,C); rect(a,22,9,4,3,LG)
-    rect(a,2,9,8,5,DB); rect(a,38,9,8,5,DB); rect(a,14,17,7,6,DB); rect(a,27,17,7,6,DB)
-    if kind==1:
-        line(a,9,8,0,5,Y); line(a,38,8,47,5,Y); rect(a,20,18,8,5,G); px(a,23,20,C); px(a,24,20,C)
-    if kind==2:
-        rect(a,4,3,8,4,R); rect(a,36,3,8,4,R); line(a,4,3,0,0,Y); line(a,43,3,47,0,Y); rect(a,21,13,6,8,Y)
-    if anim: rect(a,17,6,4,2,LG); rect(a,27,6,4,2,LG); px(a,19,6,C); px(a,28,6,C)
+    """Author three distinct 48x24 adversaries: winged, carapaced, and siege armor."""
+    a = blank(48, 24); col = [M, O, R][kind]
+    for side in (-1, 1):
+        def p(x, y):
+            return (23-x if side < 0 else 24+x, y)
+        if kind == 0:
+            panel(a, [p(6, 8), p(18, 2), p(23, 3), p(20, 10), p(11, 16)], DB)
+            poly(a, [p(9, 8), p(20, 4), p(16, 10), p(10, 12)], col)
+            line(a, *p(11, 7), *p(20, 3), LG)
+        elif kind == 1:
+            panel(a, [p(6, 5), p(15, 3), p(21, 8), p(22, 16), p(12, 18)], col)
+            line(a, *p(11, 5), *p(17, 7), Y)
+            for offset in (0, 4):
+                line(a, *p(16, 12+offset), *p(22, 16+offset), S)
+                line(a, *p(22, 16+offset), *p(23, 19+offset), LG)
+        else:
+            panel(a, [p(8, 5), p(17, 1), p(21, 4), p(20, 13), p(10, 16)], DB)
+            rect(a, *p(18 if side < 0 else 12, 3), 6, 3, S)
+            line(a, *p(12, 4), *p(17, 4), LG)
+            panel(a, [p(12, 9), p(22, 8), p(23, 15), p(14, 17)], col)
+            line(a, *p(16, 11), *p(20, 11), O if anim else D)
+        panel(a, [p(3, 16), p(9, 15), p(11, 22), p(3, 23)], DB)
+        line(a, *p(5, 18), *p(7, 18), LG)
+        line(a, *p(4, 22), *p(9, 22), col)
+    panel(a, [(16, 7), (22, 5), (28, 6), (32, 10), (30, 17), (24, 20), (17, 17), (14, 11)], col)
+    line(a, 17, 8, 20, 7, LG); line(a, 17, 15, 21, 18, D)
+    line(a, 29, 9, 30, 14, DR)
+    panel(a, [(20, 10), (27, 10), (28, 14), (24, 17), (19, 14)], DB)
+    poly(a, [(22, 11), (25, 11), (26, 13), (24, 15), (21, 13)], C if anim else O)
+    px(a, 23, 12, LG if anim else Y)
+    panel(a, [(19, 2), (23, 0), (28, 2), (29, 6), (25, 8), (20, 6)], DB)
+    line(a, 20, 4, 22, 4, C); line(a, 25, 4, 27, 4, C)
+    poly(a, [(22, 6), (25, 6), (24, 8)], S)
+    if kind == 1:
+        line(a, 20, 2, 16, 0, Y); line(a, 27, 2, 31, 0, Y)
     return a
 
+
 def transform_frame(step):
-    a=blank(32,24); rob=robot_frame(pose=step%3)
-    for y in range(24):
-        for x in range(24):
-            if rob[y][x]!=W: a[y][x+4]=rob[y][x]
-    if step>=1:
-        span=6+step*5; x0=max(0,16-span); x1=min(31,16+span)
-        line(a,x0,14,4,12,R); line(a,x1,14,27,12,R); rect(a,x0,15,x1-x0+1,2,LG)
-    if step>=2: rect(a,3,17,26,2,DB); px(a,5,18,C); px(a,26,18,C)
-    if step>=3: line(a,1,15,0,19,Y); line(a,30,15,31,19,Y)
+    """Keep docking frames and the final flight sprite geometrically consistent."""
+    if step == 3:
+        return robot_frame(spazer=True, pose=1)
+    a = blank(32, 24)
+    for y, row in enumerate(robot_frame(pose=step % 3)):
+        a[y][4:28] = row
+    flight_shell(a, step)
     return a
+
 
 assets=[]
 for i in range(3): assets.append((f'grendizer_{i}',robot_frame(variant=i&1,pose=i)))
@@ -147,10 +262,28 @@ def paste_sprite(dst,a,x,y,scale):
     for yy,row in enumerate(a):
         for xx,v in enumerate(row):
             if v!=W: d.rectangle((x+xx*scale,y+yy*scale,x+(xx+1)*scale-1,y+(yy+1)*scale-1),fill=rgb565(v))
-icon=Image.new('RGB',(128,128),(3,8,24)); di=ImageDraw.Draw(icon); di.rectangle((2,2,125,125),outline=(0,150,255),width=2)
-paste_sprite(icon,robot_frame(pose=1),16,5,4); di.text((24,105),'VEGA ASSAULT',fill=(255,210,40)); icon.save('store/icon.png')
+# Store images are promotional compositions, never represented as gameplay captures.
+icon=Image.new('RGB',(128,128),(3,8,24))
+di=ImageDraw.Draw(icon)
+di.ellipse((7,7,120,120),fill=(12,27,48),outline=(45,99,125),width=2)
+di.line((8,118,118,8),fill=(27,57,78),width=2)
+paste_sprite(icon,robot_frame(pose=1),4,4,5)
+icon.save('store/icon.png')
+
 splash=Image.new('RGB',(320,200),(2,5,18)); ds=ImageDraw.Draw(splash)
-for x,y in [(15,20),(44,58),(285,31),(252,78),(130,18),(210,45)]: ds.point((x,y),fill=(180,220,255))
-ds.ellipse((220,-35,355,100),fill=(8,35,95),outline=(20,100,220)); paste_sprite(splash,robot_frame(spazer=True,pose=1),24,50,5)
-ds.text((120,25),'VEGA ASSAULT',fill=(255,195,20)); ds.text((122,172),'PRG32 EDUCATIONAL FAN GAME',fill=(220,220,220)); ds.text((122,186),'PRESS START',fill=(255,255,255)); splash.save('store/splash.png')
+for x,y in [(15,20),(44,58),(285,31),(252,78),(130,18),(210,45),(307,131),(197,117),(18,162)]:
+    ds.point((x,y),fill=(180,220,255))
+ds.ellipse((219,48,352,181),fill=(8,25,52),outline=(31,73,105))
+# Scale the default pixel lettering with nearest-neighbor sampling for a clear title.
+lettering=Image.new('RGBA',(110,14),(0,0,0,0))
+ImageDraw.Draw(lettering).text((0,0),'VEGA ASSAULT',fill=(255,210,85,255))
+splash.paste(lettering.resize((220,28),Image.Resampling.NEAREST),(77,12),lettering.resize((220,28),Image.Resampling.NEAREST))
+ds.text((78,43),'ORIGINAL PIXEL ART / PRG32',fill=(133,183,207))
+paste_sprite(splash,robot_frame(spazer=True,pose=1),16,61,4)
+paste_sprite(splash,boss(0),191,66,2)
+paste_sprite(splash,enemy_robot(1),210,132,2)
+paste_sprite(splash,saucer(anim=1),267,131,2)
+ds.line((16,174,303,174),fill=(45,99,125))
+ds.text((17,181),'UNOFFICIAL EDUCATIONAL FAN GAME',fill=(188,210,225))
+splash.save('store/splash.png')
 print('assets',len(assets),'indexed_sprite_bytes',sum(len(a)*len(a[0]) for _,a in assets),'palette_bytes',len(palette)*2,'decode_buffer_bytes',48*24*2)

@@ -41,3 +41,11 @@ SDL framebuffer captures confirmed the attract/title presentation, first-stage g
 The existing host configuration is 22050 Hz, signed 16-bit **mono**, with stereo mode disabled. The run captured 1225980 PCM bytes (27.8 seconds), paced by 882-byte UART chunks and credit acknowledgments. Absolute peak was 13467; no samples reached the signed 16-bit clipping boundary. The last second of the paused interval was all zero; the last second after resume was nonzero (peak 6117). These measurements verify mono transport, pause silence and resumed output, not subjective sound quality or stereo separation.
 
 Local evidence is under `build/qemu-soundtrack/`: `serial.log`, `marks.json`, framebuffer dumps/PNGs, `mono.wav` and the shorter `gameplay-mono.wav`. Dumps used `g_fb` at 0x3fc9fe7c, resolved from this host ELF with `riscv32-esp-elf-nm`; resolve it again for any rebuilt host. These generated files are not committed. Full stage/boss coverage, stereo listening and physical ESP32-C6 remain separate validation obligations.
+
+## Sprite refinement smoke test (2026-09-02)
+
+The 26520-byte sprite revision was staged through the normal QEMU uploader into the existing ESP32-C3 host. The loader reported 25556 bytes of code, 29372 bytes of executable memory and 864 bytes of audio. The framebuffer address was checked again against that host ELF before capture. SDL framebuffer inspection confirmed the refined title/player artwork, first-stage enemies, firing, pause overlay and resumed gameplay. `assets/qemu-gameplay.png` now shows this revision's first-stage enemy-wave capture, enlarged 2× with nearest-neighbor sampling.
+
+Local evidence is in `build/qemu-sprites/` (serial log, raw framebuffer dumps, PNGs, contact sheet and mono WAV). The run collected 1184526 bytes of mono PCM, peak 13874, with no full-scale clipped samples; this is a transport observation, not a listening or stereo test. No guest panic or reset was observed. The sheet and native capture cover visual inspection separately; complete target stage/boss playthroughs and physical ESP32-C6 validation remain outstanding.
+
+The [gamefield gallery](screenshots.md) includes the enemy-wave, firing, pause and resume frames from this run.

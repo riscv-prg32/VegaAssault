@@ -14,7 +14,7 @@ Authenticate to the target instance and submit the multipart bundle to either su
 ```sh
 curl -X POST https://STORE.example/api/publish/bundle \
   -H "Authorization: Bearer $PRG32_STORE_TOKEN" \
-  -F bundle=@dist/grendizer-vega-assault-86-store-1.1.0.zip
+  -F bundle=@dist/grendizer-vega-assault-86-store-1.2.0.zip
 ```
 
 The upload enters editor review. Verify title, version, author, icon, splash, architecture labels, legal notice, download, and launch behavior before approval. Never mark one binary as a different architecture merely to fill a manifest slot.
@@ -28,3 +28,9 @@ The default version and ZIP filename follow `store/manifest.template.json`; `VER
 ## Display name
 
 The public title and cartridge header name are **Vega Assault**. The established Store ID, artifact filenames, and `grendizer_c` entry-point prefix remain stable so existing listings and build integrations continue to identify the same cartridge. Grendizer remains the playable character's name.
+
+## Version 1.2.0 artwork and package
+
+The manifest describes the refined 24-frame art and preserves the established Store ID. `tools/generate_assets.py` generates a 128×128 character icon and a 320×200 promotional splash featuring the flight sprite and enemies. These compositions use original project sprites and are not gameplay screenshots. Actual QEMU gamefields are available in the [screenshot gallery](screenshots.md).
+
+Regenerate with `python3 tools/generate_assets.py`, build with `./build.sh`, and package with `./publish-store.sh`. The default outputs are `dist/grendizer-vega-assault-86-store-1.2.0.zip` and its `.zip.sha256` sidecar; generated build/distribution files remain ignored by Git. The default ESP32-C6 entry identifies the intended portable-cartridge target, not a completed physical-board test. ESP32-C3 QEMU smoke testing passed; physical ESP32-C6, full target playthroughs and stereo listening are still outstanding. Local bundle creation does not upload to a Store instance.

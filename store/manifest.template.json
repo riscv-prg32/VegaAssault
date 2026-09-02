@@ -2,12 +2,25 @@
   "abi": "prg32-metadata-1.0",
   "id": "org.riscv-prg32.grendizer-vega-assault-86",
   "title": "Vega Assault",
-  "version": "1.1.0",
-  "summary": "A compact 1980s-style PRG32 arcade shooter fan game with animated Spazer docking, multiple weapons, bosses, stereo chiptune music and original pixel art.",
-  "description": "Defend Earth, dock with Spazer and take the battle to Vega across three arcade stages. Features Screw Crusher, Double Harken and Space Thunder attacks, animated transformations, multiple enemy robot families, stage-specific bosses, attract mode, original RGB565 sprites, and original stereo chiptune/SFX. Unofficial, non-commercial fan work; no ripped anime/game assets or copyrighted soundtrack recordings are included.",
-  "authors": ["PRG32 Grendizer fan-game contributors"],
+  "version": "1.2.0",
+  "summary": "A compact mecha arcade shooter with shaded original pixel art, animated docking, three stages, distinct bosses and stereo chiptune music.",
+  "description": "Defend Earth across three arcade stages with Screw Crusher, Double Harken and Space Thunder. Version 1.2.0 refines all 24 sprite frames with inked armor, articulated limbs, swept docking wings and distinct winged, carapaced and siege bosses. Includes transformations, multiple enemy families, attract mode and original stereo chiptune/SFX. Unofficial, non-commercial educational fan work; no traced anime/manga artwork, extracted sprites, production logos or soundtrack recordings are included. Third-party names and fictional properties remain with their rights holders.",
+  "authors": [
+    "PRG32 Grendizer fan-game contributors"
+  ],
   "license": "MIT",
-  "tags": ["arcade", "shooter", "retro", "risc-v", "prg32", "fan-game", "stereo"],
-  "assets": {"icon": "icon.png", "splash": "splash.png"},
+  "tags": [
+    "arcade",
+    "shooter",
+    "retro",
+    "risc-v",
+    "prg32",
+    "fan-game",
+    "stereo"
+  ],
+  "assets": {
+    "icon": "icon.png",
+    "splash": "splash.png"
+  },
   "architectures": []
 }

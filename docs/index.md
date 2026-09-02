@@ -14,3 +14,5 @@ This directory is the academic documentation set for *Vega Assault*. It treats t
 10. [Reproducibility](reproducibility.md)
 11. [CartridgeStore Publication](cartridge_store.md)
 12. [IP, Ethics, and Fan-Work Scope](ip_ethics.md)
+
+- [Gamefield screenshot gallery](screenshots.md): actual QEMU enemy waves, firing, pause and resume.

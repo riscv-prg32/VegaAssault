@@ -1,6 +1,13 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 - 2026-09-02
+
+- Refine all 24 sprites with original inked armor, articulated poses and distinct boss silhouettes; preserve frame dimensions and the 15,068-byte indexed-art footprint.
+- Add four actual QEMU gamefield screenshots and refresh the README preview.
+- Refresh Store metadata, icon, splash and reproducible bundle for version 1.2.0.
+- Verify the 26,520-byte portable build, sanitizer regressions and QEMU firing/pause/resume smoke test; physical ESP32-C6 validation remains outstanding.
+
+## Earlier unreleased changes
 
 - Rename the public game title, cartridge display name, title screen and Store artwork to Vega Assault; preserve existing identifiers and entry points.
 

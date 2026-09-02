@@ -8,9 +8,11 @@ This pipeline illustrates a general systems principle: expensive authoring repre
 
 ## 2026 pixel-art redesign
 
-The second-generation art pass deliberately improves visual fidelity without changing the sprite dimensions. The 24 frames retain their established 16x16, 24x24, 32x24, and 48x24 envelopes, so collision assumptions remain stable. The later palette-index conversion reduces source pixel storage from 30,080 to 15,040 bytes, plus a 28-byte palette and 2,304-byte decode buffer. Grendizer now uses a stronger horned crown silhouette, layered blue armor, a red chest motif, light forearms, highlighted leg armor, and pose-specific arm geometry. The Spazer uses a compact red/white/blue flying-body silhouette and staged docking geometry. Enemy families are distinguished by blade, crawler, horned-beast, and gunner profiles, while each boss has a different weapon silhouette and core treatment.
+The current art pass uses classic cel-animation conventions: dark ink contours, stepped metallic highlights, tapered armor plates, recessed eyes, and articulated gauntlets. The player has a project-specific split crest, cheek fins and divided breastplate; docking uses swept segmented wings. Enemies retain blade, crawler, horned-beast and gunner roles, while bosses now have winged, carapaced and siege silhouettes. These are project design choices, not PRG32 requirements or reproductions of character model sheets.
 
-This is a constrained-art exercise rather than an attempt to reproduce animation cels. Every runtime pixel is generated locally by `tools/generate_assets.py`. The generator is therefore both the art source and an executable specification of the palette, geometry, animation frames, and memory footprint. The Store icon and splash are generated from the same vocabulary, ensuring visual coherence and reproducibility.
+All 24 frames retain their 16x16, 24x24, 32x24 and 48x24 envelopes and exported names. Storage remains 15,040 bytes of indices, a 28-byte palette and a 2,304-byte decode buffer. The 14-color palette uses muted armor tones and bright eyes/reactors; only `0xffff` is transparent. Animation changes limb positions, tread pixels, exhaust or reactor illumination. The final docking frame is identical to the flight sprite to avoid a visual jump.
+
+Every runtime pixel is generated locally by `tools/generate_assets.py`. Integer polygon fills and ink contours are rasterized offline with Pillow, with no new runtime graphics calls or memory requirements. The Store icon and splash use the same generator. Regenerate the sprite sheet and native gameplay preview after art edits.
 
 ### Intellectual-property boundary
 
@@ -18,7 +20,7 @@ The project is an unofficial, non-commercial educational fan work. Its visual la
 
 ## Decode contract
 
-Palette storage is a project design decision. The inspected PRG32 `prg32_sprite_draw_frame` implementation synchronously consumes RGB565 pixels before returning; that observed behavior permits buffer reuse. `sprite_draw` accepts only generated frames up to 48x24 and performs O(width × height) integer lookups without allocation. White (`0xffff`) remains transparent. Pixel-by-pixel comparison of all 24 decoded arrays and the regenerated preview found no artwork differences. The extra decode pass needs frame-time verification on each host.
+Palette storage is a project design decision. The inspected PRG32 `prg32_sprite_draw_frame` implementation synchronously consumes RGB565 pixels before returning; that observed behavior permits buffer reuse. `sprite_draw` accepts only generated frames up to 48x24 and performs O(width × height) integer lookups without allocation. White (`0xffff`) remains transparent. The original palette-index conversion preserved the decoded artwork; subsequent art passes intentionally change the generated pixels. The extra decode pass needs frame-time verification on each host.
 
 ## Gameplay capture
 

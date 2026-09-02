@@ -6,9 +6,13 @@ This game is fan made with no business target, just a tribute.
 
 All code, pixel art, waveforms, SFX, and musical patterns supplied by this repository are original project material. No anime frames, manga scans, production logos, commercial-game sprites, soundtrack recordings, or note-for-note transcriptions are included. Third-party names, characters, designs, and trademarks remain the property of their respective rights holders.
 
-![Vega Assault gameplay: Grendizer firing Screw Crusher at a first-stage enemy wave](assets/qemu-gameplay.png)
+![Vega Assault gameplay: refined sprites during a first-stage enemy wave](assets/qemu-gameplay.png)
 
-*Actual ESP32-C3 QEMU gameplay capture, including the host display bands, enlarged 2× without smoothing. See [QEMU validation](docs/qemu.md#observed-validation) and the [reproducible native capture](docs/graphics.md#gameplay-capture).*
+*Actual ESP32-C3 QEMU gameplay capture, including the host display bands, enlarged 2× without smoothing. See [QEMU validation](docs/qemu.md#sprite-refinement-smoke-test-2026-09-02) and the [reproducible native capture](docs/graphics.md#gameplay-capture).*
+
+The refined sprites use inked silhouettes, shaded armor, articulated limbs and distinct boss profiles, with original geometry inspired by classic mecha drawing conventions. All 24 frame sizes and the 15,068-byte combined sprite/palette footprint are preserved. See the [sprite sheet](assets/sprite-sheet.png) and [graphics pipeline](docs/graphics.md).
+
+More actual gamefield captures—combat, pause and resume—are in the [screenshot gallery](docs/screenshots.md). The refreshed [Store icon](store/icon.png) and [splash artwork](store/splash.png) accompany the 1.2.0 bundle.
 
 ## Educational purpose
 
@@ -94,12 +98,12 @@ The repository contains Store artwork, a manifest template, a bundle builder, an
 ./publish-store.sh
 ```
 
-The helper takes its default version from `store/manifest.template.json` (currently 1.1.0); `VERSION=...` overrides it. It uses the configured PRG32 tools to validate cartridge structure and ABI/memory requirements before creating a reproducible archive. Inspect `dist/`, then upload the generated ZIP to your CartridgeStore instance:
+The helper takes its default version from `store/manifest.template.json` (currently 1.2.0); `VERSION=...` overrides it. It uses the configured PRG32 tools to validate cartridge structure and ABI/memory requirements before creating a reproducible archive. Inspect `dist/`, then upload the generated ZIP to your CartridgeStore instance:
 
 ```sh
 curl -X POST https://YOUR-STORE/api/publish/bundle \
   -H "Authorization: Bearer $PRG32_STORE_TOKEN" \
-  -F bundle=@dist/grendizer-vega-assault-86-store-1.1.0.zip
+  -F bundle=@dist/grendizer-vega-assault-86-store-1.2.0.zip
 ```
 
 Uploads enter the Store editor-review queue. Full instructions, architecture labeling rules, and release checks are in [docs/cartridge_store.md](docs/cartridge_store.md) and [STORE_PUBLISHING.md](STORE_PUBLISHING.md).
@@ -130,7 +134,7 @@ Start with [docs/index.md](docs/index.md). The documentation covers architecture
 
 Run `sh tools/test_game.sh` for C99 gameplay regression tests with address and undefined-behavior sanitizers. The tests use the sibling PRG32 headers (or `PRG32_ROOT`) and mock portable input, graphics, and audio calls. They cover pause, terminal transitions, controls, weapons, all stage/boss transitions, deterministic restart, and enemy movement/firing fixes. Weapons require enough free slots for the entire attack before spending energy or starting cooldowns, and waves include all five enemy families. After building, run `python3 -m unittest discover -s tests -p 'test_*.py'` for audio validation and Store packaging regressions. See [docs/testing.md](docs/testing.md) for what still requires QEMU and hardware.
 
-Sprites are stored as one-byte palette indices and expanded into a fixed RGB565 buffer before drawing. This preserves the artwork and fits the portable builder's separate **32768-byte executable RAM limit**. The measured package is **26336 bytes**, with **29188 bytes** of code/data/BSS; see [SIZE_BUDGET.md](SIZE_BUDGET.md).
+Sprites are stored as one-byte palette indices and expanded into a fixed RGB565 buffer before drawing. This preserves the artwork and fits the portable builder's separate **32768-byte executable RAM limit**. The measured package is **26520 bytes**, with **29372 bytes** of code/data/BSS; see [SIZE_BUDGET.md](SIZE_BUDGET.md).
 
 ## Cartridge-size rule
 
