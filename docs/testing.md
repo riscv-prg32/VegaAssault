@@ -29,3 +29,10 @@ After building, run `python3 -m unittest discover -s tests -p 'test_*.py'`. Five
 ## Audio input validation
 
 The Python suite now includes five audio-packer tests, for ten Python test methods overall. Tests verify byte-for-byte preservation of the existing 864-byte AUD0 block, rejection of bad loops/references/pan values, unknown commands, overflowing or noninteger timing/arguments, signed pan encoding, and preservation of previous output after invalid input. The valid cartridge and Store ZIP remain byte-identical to the previous build because runtime audio and C code did not change.
+
+
+## Soundtrack revision validation (2026-09-02)
+
+The subsequent soundtrack revision changes the cartridge and pan descriptors; earlier byte-identical claims above describe the earlier packer-only change. The new portable package is 26520 bytes (104552 bytes below the unchanged 131072-byte limit), with 29372 bytes of executable memory and an 864-byte audio block. C99 warning checks, educational comments, sanitizer gameplay regressions and Python packer/Store tests are rerun for this revision.
+
+Soundtrack regressions cover all three complete phrases, deterministic replay, distinct accompaniment rhythms, held lead and bass, explicit rests, reduced attract volumes and game-over silence. Existing pause tests check frozen sequencing. These are event-level checks, not a listening test. QEMU observations above refer to the previous cartridge. The revised cartridge subsequently passed the [updated soundtrack QEMU smoke test](qemu.md#updated-soundtrack-smoke-test-2026-09-02), including mono PCM capture, firing, pause silence and resumed output. Stereo listening, complete target playthroughs and physical ESP32-C6 remain unverified.

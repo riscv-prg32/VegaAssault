@@ -45,13 +45,13 @@
     {
       "sample_id": 0,
       "default_volume": 118,
-      "default_pan": -42,
+      "default_pan": -28,
       "sustain": 255
     },
     {
       "sample_id": 1,
       "default_volume": 108,
-      "default_pan": 42,
+      "default_pan": 36,
       "sustain": 255
     },
     {

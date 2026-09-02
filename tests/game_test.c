@@ -8,12 +8,16 @@
 static uint32_t test_input;
 // EDUCATIONAL: Record music events and boss draws for pause verification.
 static int audio_events, boss_draws, sample_events;
+// EDUCATIONAL: Fixed voice snapshots expose sustain, rest, dynamics and replay without real audio hardware.
+static int note_count[3], note_active[3], note_volume[3];
+// EDUCATIONAL: Hash ordered note events to compare complete deterministic phrases without allocating a log.
+static uint32_t note_hash;
 // EDUCATIONAL: Precondition: host test sets input; no state change; O(1); replaces portable input read.
 uint32_t prg32_input_read(void){return test_input;}
 // EDUCATIONAL: Precondition: valid voice parameters; records one effect; O(1); mocks portable note-on.
-void prg32_audio_note_on(uint8_t c,uint8_t i,uint8_t n,uint8_t v){(void)c;(void)i;(void)n;(void)v;audio_events++;}
+void prg32_audio_note_on(uint8_t c,uint8_t i,uint8_t n,uint8_t v){assert(c<3&&i<3&&n>0&&n<128&&v>0);note_count[c]++;note_active[c]=1;note_volume[c]=v;note_hash=note_hash*33u+c;note_hash=note_hash*33u+n;note_hash=note_hash*33u+v;audio_events++;}
 // EDUCATIONAL: Precondition: valid channel; records one effect; O(1); mocks portable note-off.
-void prg32_audio_note_off(uint8_t c){(void)c;audio_events++;}
+void prg32_audio_note_off(uint8_t c){assert(c<3);note_active[c]=0;audio_events++;}
 // EDUCATIONAL: Precondition: sample arguments from game; no sound output; O(1); mocks panned sample playback.
 int prg32_audio_play_sample_pan(uint16_t s,uint8_t v,uint16_t p,int8_t pan){(void)s;(void)v;(void)p;assert(pan>=-64&&pan<=63);sample_events++;return 0;}
 // EDUCATIONAL: Precondition: RGB565 color; no framebuffer effect; O(1); mocks portable clear.
@@ -30,10 +34,36 @@ void prg32_sprite_draw_24x24(int x,int y,const uint16_t*s){(void)x;(void)y;(void
 void prg32_sprite_draw_frame(int x,int y,int w,int h,const uint16_t*s,uint32_t f,uint16_t t){(void)x;(void)y;(void)h;(void)s;(void)f;(void)t;if(w==48)boss_draws++;}
 // EDUCATIONAL: Precondition: none; resets cartridge and mocked input; bounded by entity capacity; calls game init and new-game audio.
 static void reset(void){test_input=0;grendizer_c_init();new_game();begin_play();old_input=0;}
+// EDUCATIONAL: Precondition: host mocks installed; exercises all stage phrases and silence with bounded loops; changes game/music snapshots and calls the sequencer.
+static void test_music(void){
+// EDUCATIONAL: Reserve deterministic replay snapshots and bounded loop counters on the stack.
+int st,i,voice;uint32_t first;
+// EDUCATIONAL: Verify every stage independently because each has different chord and melody data.
+for(st=1;st<=3;st++){
+// EDUCATIONAL: Start a full phrase in combat with a clean event checksum and voice counters.
+reset();stage=st;music_reset();note_hash=0;for(voice=0;voice<3;voice++)note_count[voice]=0;
+// EDUCATIONAL: Run exactly one phrase and require a clean wrap to the initial subdivision.
+for(i=0;i<448;i++)music_update();assert(music_step==0&&music_tick==0);
+// EDUCATIONAL: Arpeggio and bass retain distinct rhythms, and deliberate melody rests reduce its note count.
+assert(note_count[1]==64&&note_count[2]==16&&note_count[0]>24&&note_count[0]<32);
+// EDUCATIONAL: Repeat from reset and compare every emitted note, channel and velocity in order.
+first=note_hash;music_reset();note_hash=0;for(i=0;i<448;i++)music_update();assert(note_hash==first);
+// EDUCATIONAL: End per-stage sequence coverage.
+}
+// EDUCATIONAL: Check the first stage melody sustains across an arpeggio event, then rests while bass sustains.
+reset();music_reset();for(i=0;i<14;i++)music_update();assert(note_active[0]&&note_active[2]);for(i=0;i<7;i++)music_update();assert(!note_active[0]&&note_active[2]);
+// EDUCATIONAL: Attract must lower every voice relative to its combat level.
+state=ST_ATTRACT;music_reset();for(i=0;i<7;i++)music_update();assert(note_volume[0]<112&&note_volume[1]<84&&note_volume[2]<104);
+// EDUCATIONAL: Game-over must stay silent over a complete phrase duration.
+music_off();state=ST_OVER;i=audio_events;for(voice=0;voice<448;voice++)music_update();assert(audio_events==i&&!note_active[0]&&!note_active[1]&&!note_active[2]);
+// EDUCATIONAL: End soundtrack regression checks without requiring a target audio device.
+}
 // EDUCATIONAL: Precondition: host execution; changes test/game state and prints results; bounded loops; all ABI effects are mocked.
 int main(void){
 // EDUCATIONAL: Reserve snapshot counters for pause and deterministic replay assertions.
 int i,f,t,r,m,events;uint32_t seed;Star snapshot[MAX_STARS];
+// EDUCATIONAL: Verify soundtrack phrase timing, sustain, rests, dynamics and deterministic replay.
+test_music();
 // EDUCATIONAL: Enter combat and pause with active cooldown and invulnerability.
 reset();screw_cd=5;harken_cd=9;thunder_cd=12;invuln=50;timer=29;test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_PAUSE);
 // EDUCATIONAL: Snapshot simulation clocks, random seed, and audio count after pause entry.

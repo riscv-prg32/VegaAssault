@@ -108,16 +108,18 @@ static EShot eshots[MAX_ESHOTS];
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static Star stars[MAX_STARS];
 
-// EDUCATIONAL: Store immutable cartridge-resident lookup data used by the music sequencer.
-static const uint8_t lead1[16]={72,76,79,84,81,79,76,74,72,76,79,83,81,79,76,74};
-// EDUCATIONAL: Store immutable cartridge-resident lookup data used by the music sequencer.
-static const uint8_t lead2[16]={69,72,76,81,79,76,72,69,71,74,78,83,81,78,74,71};
-// EDUCATIONAL: Store immutable cartridge-resident lookup data used by the music sequencer.
-static const uint8_t lead3[16]={67,71,74,79,76,74,71,67,69,72,76,81,79,76,72,69};
-// EDUCATIONAL: Store immutable cartridge-resident lookup data used by the music sequencer.
-static const uint8_t arp[16]  ={60,67,64,67,62,69,65,69,60,67,64,71,69,67,64,62};
-// EDUCATIONAL: Store immutable cartridge-resident lookup data used by the music sequencer.
-static const uint8_t bass[16] ={36,0,36,0,38,0,41,0,36,0,43,0,41,0,38,0};
+// EDUCATIONAL: Original 32-note stage-one melody spans eight bars; zero represents a deliberate rest.
+static const uint8_t lead1[32]={72,0,76,79,83,79,76,74,69,72,76,79,81,0,79,76,65,69,72,76,74,72,69,0,67,71,74,79,77,74,71,74};
+// EDUCATIONAL: Stage two uses a minor-key answer phrase over its own matching chord roots.
+static const uint8_t lead2[32]={69,72,0,76,79,76,72,71,65,69,72,76,77,76,72,0,72,76,79,83,84,79,76,74,67,71,74,77,76,74,71,0};
+// EDUCATIONAL: Stage three resolves a rising minor melody through a major dominant chord.
+static const uint8_t lead3[32]={67,70,74,0,77,74,70,69,63,67,70,74,75,74,70,0,65,69,72,77,79,77,72,69,62,66,69,74,72,69,66,0};
+// EDUCATIONAL: Four chord roots per stage serve both the centered bass and the right-hand arpeggio.
+static const uint8_t music_roots[3][4]={{48,45,41,43},{45,41,48,43},{43,39,41,38}};
+// EDUCATIONAL: Major thirds are four semitones and minor thirds three, keeping every accompaniment in harmony.
+static const uint8_t music_thirds[3][4]={{4,3,4,4},{3,4,4,4},{3,4,4,4}};
+// EDUCATIONAL: Eight arpeggio positions describe root, third, fifth, and octave without storing repeated chords.
+static const uint8_t arp_degrees[8]={0,1,2,3,2,1,2,1};
 
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static uint32_t rnd(void){ rng=rng*1664525u+1013904223u; return rng; }
@@ -133,8 +135,56 @@ static void clear_entities(void){int i;for(i=0;i<MAX_SHOTS;i++)shots[i].active=0
 static void music_off(void){prg32_audio_note_off(0);prg32_audio_note_off(1);prg32_audio_note_off(2);}
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void music_reset(void){music_tick=0;music_step=0;music_off();}
-// EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
-static void music_update(void){const uint8_t *l=stage==1?lead1:(stage==2?lead2:lead3);uint8_t n;if(++music_tick<7)return;music_tick=0;music_off();n=l[music_step];if(state!=ST_OVER){prg32_audio_note_on(0,INST_LEAD,n,state==ST_ATTRACT?72:112);prg32_audio_note_on(1,INST_ARP,arp[music_step],96);if(bass[music_step])prg32_audio_note_on(2,INST_BASS,bass[music_step],88);}music_step=(music_step+1)&15;}
+// EDUCATIONAL: Precondition: initialized game and stage 1..3; advances only fixed music counters, emits portable note calls, uses O(1) time/memory and no RNG.
+static void music_update(void){
+// EDUCATIONAL: Select one immutable original melody without allocating or copying note data.
+const uint8_t *lead=stage==1?lead1:(stage==2?lead2:lead3);
+// EDUCATIONAL: Local integer values describe chord position, note and performance dynamics.
+int chord,root,third,degree,n,quiet;
+// EDUCATIONAL: Game-over remains silent; the main update already freezes this function during pause.
+if(state==ST_OVER)return;
+// EDUCATIONAL: Seven game ticks form one subdivision, retaining the existing deterministic tempo.
+if(++music_tick<7)return;
+// EDUCATIONAL: Restart only the subdivision clock, allowing sustained voices to continue sounding.
+music_tick=0;
+// EDUCATIONAL: Each chord occupies sixteen subdivisions; a full phrase occupies sixty-four.
+chord=music_step/16;
+// EDUCATIONAL: Read the stage-specific root and third shared by all accompaniment notes.
+root=music_roots[stage-1][chord];third=music_thirds[stage-1][chord];
+// EDUCATIONAL: Attract mode reduces every part rather than leaving accompaniment at combat volume.
+quiet=state==ST_ATTRACT;
+// EDUCATIONAL: The melody moves every two subdivisions so it sings above the faster arpeggio.
+if((music_step&1)==0){
+// EDUCATIONAL: Release only the lead before its next note or deliberate rest.
+prg32_audio_note_off(0);
+// EDUCATIONAL: Index the thirty-two-note phrase using half of the subdivision counter.
+n=lead[music_step/2];
+// EDUCATIONAL: Zero is a rest, never a request to play MIDI note zero.
+if(n)prg32_audio_note_on(0,INST_LEAD,(uint8_t)n,(uint8_t)(quiet?76:112));
+// EDUCATIONAL: Finish the melody event while bass can remain sustained.
+}
+// EDUCATIONAL: Renew the arpeggio on every subdivision using the instrument default stereo pan.
+prg32_audio_note_off(1);
+// EDUCATIONAL: Select a repeating chord tone rather than an unrelated fixed counter-line.
+degree=arp_degrees[music_step&7];
+// EDUCATIONAL: Place the arpeggio one octave above the chord root with the correct major or minor third.
+n=root+12+(degree==1?third:(degree==2?7:(degree==3?12:0)));
+// EDUCATIONAL: Accent alternating arpeggio notes gently and leave room for melody and effects.
+prg32_audio_note_on(1,INST_ARP,(uint8_t)n,(uint8_t)(quiet?54:((music_step&1)?72:84)));
+// EDUCATIONAL: Bass changes every four subdivisions, sustaining a centered rhythmic foundation.
+if((music_step&3)==0){
+// EDUCATIONAL: Stop the previous bass note before alternating root and fifth.
+prg32_audio_note_off(2);
+// EDUCATIONAL: Alternate root and fifth one octave below the chord; all values fit MIDI byte range.
+n=root-12+((music_step&4)?7:0);
+// EDUCATIONAL: Keep bass centered through its instrument and quieter during attract mode.
+prg32_audio_note_on(2,INST_BASS,(uint8_t)n,(uint8_t)(quiet?72:104));
+// EDUCATIONAL: Finish the bass event without stopping the other voices.
+}
+// EDUCATIONAL: Wrap the eight-bar phrase with a bounded counter and no heap state.
+music_step=(music_step+1)&63;
+// EDUCATIONAL: End the constant-time three-voice sequencer.
+}
 
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void init_stars(void){int i;for(i=0;i<MAX_STARS;i++){stars[i].x=(int)(rnd()%SW);stars[i].y=(int)(rnd()%SH);stars[i].s=1+(int)(rnd()%3u);}}

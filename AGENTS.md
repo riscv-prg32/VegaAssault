@@ -4,6 +4,7 @@
 This repository is simultaneously a playable PRG32 cartridge and an undergraduate teaching artifact for C, computer architecture, embedded systems, graphics, audio, reproducible builds, and software verification. Every change must preserve both goals.
 
 ## Non-negotiable invariants
+- Be sure to fit the cartridge requirements.
 - Preserve `grendizer_c_init`, `grendizer_c_update`, and `grendizer_c_draw`.
 - The final `.prg32` package MUST be <= 131072 bytes; never weaken the size gate.
 - Use only the portable PRG32 cartridge ABI from game code; do not call ESP-IDF internals.
@@ -21,6 +22,9 @@ This repository is simultaneously a playable PRG32 cartridge and an undergraduat
 Any architectural or behavioral change must update README.md and the relevant files under `docs/`. Documentation must distinguish observed PRG32 behavior from project-specific design decisions and must be suitable for citation in laboratory reports.
 
 ## Intellectual property
+- Don't infringe copyright material
+- The game is fan made with no business target, just a tribute.
+
 Do not add ripped animation frames, manga scans, commercial sprites, logos, recordings, MIDI transcriptions, or note-for-note copyrighted music. New audiovisual material must be original unless maintainers document rights. The project remains an unofficial fan/educational work.
 
 ## Asset workflow

@@ -2,6 +2,8 @@
 
 An unofficial, non-commercial, educational PRG32 C fan-game inspired by the world of Go Nagai's *UFO Robot Grendizer*. The cartridge combines an arcade-style finite-state machine, animated RGB565 sprites, Grendizer/Spazer transformations, Screw Crusher, Double Harken and Space Thunder, multiple enemy families, three terrain stages, boss-specific patterns, and an original stereo chiptune/SFX system.
 
+This game is fan made with no business target, just a tribute.
+
 All code, pixel art, waveforms, SFX, and musical patterns supplied by this repository are original project material. No anime frames, manga scans, production logos, commercial-game sprites, soundtrack recordings, or note-for-note transcriptions are included. Third-party names, characters, designs, and trademarks remain the property of their respective rights holders.
 
 ![Vega Assault gameplay: Grendizer firing Screw Crusher at a first-stage enemy wave](assets/qemu-gameplay.png)
@@ -11,6 +13,8 @@ All code, pixel art, waveforms, SFX, and musical patterns supplied by this repos
 ## Educational purpose
 
 The repository is intentionally written as a teaching artifact. Every nonblank C source line is accompanied by an `EDUCATIONAL` comment. The implementation emphasizes explicit finite-state machines, static arrays, deterministic integer logic, the PRG32 ABI, RGB565 graphics, compact audio sequencing, reproducible asset generation, and a hard cartridge-size budget. See [docs/educational_design.md](docs/educational_design.md).
+
+The original soundtrack uses eight-bar stage-specific phrases with matching chord progressions, sustained lead and centered bass, and a quieter arpeggio on the right. Moderate stereo separation keeps both parts present in each speaker, and attract mode lowers all three voices. See [audio design and validation](docs/audio.md). The revised cartridge passed an [ESP32-C3 QEMU mono-audio smoke test](docs/qemu.md#updated-soundtrack-smoke-test-2026-09-02), including firing, pause silence and resumed playback; stereo and physical ESP32-C6 listening remain unverified.
 
 ## Controls
 

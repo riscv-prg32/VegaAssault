@@ -30,3 +30,14 @@ On 2026-09-02, PRG32 commit `58dde55ddc37bf23d05d489679f03f6ffce99c62` was used 
 Framebuffer captures confirmed attract, title, first-stage gameplay with Screw Crusher shots, and the pause overlay, using serial START and A inputs. `assets/qemu-gameplay.png` is the captured 320×240 framebuffer enlarged to 640×480 with nearest-neighbor sampling. No scene elements were added. The README retains the separate native capture workflow for reproducibility without running QEMU.
 
 The smoke run collected 364266 bytes of mono UART PCM while acknowledging 882-byte chunks at approximately 20 ms intervals to provide audio flow control. This confirms audio transport, not audible quality or stereo/mono equivalence. Full three-stage playthroughs, boss patterns, resume, game-over/victory, stereo listening, frame-time measurements, and physical ESP32-C6 remain outside this QEMU smoke check. Host regression tests cover several of these logical transitions but cannot substitute for target playtesting.
+
+
+## Updated soundtrack smoke test (2026-09-02)
+
+The revised 26520-byte cartridge was staged through `python3 -m prg32 qemu upload` into the existing ESP32-C3 host. Espressif QEMU `esp_develop_9.0.0_20240606` passed the machine probe. The loader reported 25556 bytes of code, 29372 bytes of executable memory and 864 bytes of audio, confirming this run used the revised build.
+
+SDL framebuffer captures confirmed the attract/title presentation, first-stage gameplay, Screw Crusher firing with an increased score, pause overlay and resumed gameplay. Serial input used SELECT to reach the cartridge list, A to launch, then START for title/start/pause/resume. No guest panic or reset was observed during the approximately 28-second smoke run; QEMU was terminated by the test afterward.
+
+The existing host configuration is 22050 Hz, signed 16-bit **mono**, with stereo mode disabled. The run captured 1225980 PCM bytes (27.8 seconds), paced by 882-byte UART chunks and credit acknowledgments. Absolute peak was 13467; no samples reached the signed 16-bit clipping boundary. The last second of the paused interval was all zero; the last second after resume was nonzero (peak 6117). These measurements verify mono transport, pause silence and resumed output, not subjective sound quality or stereo separation.
+
+Local evidence is under `build/qemu-soundtrack/`: `serial.log`, `marks.json`, framebuffer dumps/PNGs, `mono.wav` and the shorter `gameplay-mono.wav`. Dumps used `g_fb` at 0x3fc9fe7c, resolved from this host ELF with `riscv32-esp-elf-nm`; resolve it again for any rebuilt host. These generated files are not committed. Full stage/boss coverage, stereo listening and physical ESP32-C6 remain separate validation obligations.
