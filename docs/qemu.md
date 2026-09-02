@@ -49,3 +49,13 @@ The 26520-byte sprite revision was staged through the normal QEMU uploader into 
 Local evidence is in `build/qemu-sprites/` (serial log, raw framebuffer dumps, PNGs, contact sheet and mono WAV). The run collected 1184526 bytes of mono PCM, peak 13874, with no full-scale clipped samples; this is a transport observation, not a listening or stereo test. No guest panic or reset was observed. The sheet and native capture cover visual inspection separately; complete target stage/boss playthroughs and physical ESP32-C6 validation remain outstanding.
 
 The [gamefield gallery](screenshots.md) includes the enemy-wave, firing, pause and resume frames from this run.
+
+
+## Heroic soundtrack smoke test (2026-09-03)
+
+The 26812-byte revision was staged with the framework uploader into the existing ESP32-C3 host. The loader confirmed 25604 code bytes, 29420 executable-memory bytes and 1108 audio bytes. The host ELF still resolved `g_fb` to 0x3fc9fe7c before capture. Gameplay, pause and resume framebuffers were inspected. The approximately 27.76-second mono capture peaked at 13936 without full-scale clipping; the last second of pause was silent and resumed output was nonzero. No guest panic was observed. Evidence is in `build/qemu-heroic/`. This host remains mono; stereo previews are separate software-model output, and ESP32-C6 listening is still pending.
+
+
+## Opening-theme refinement smoke test (2026-09-03)
+
+The current 28036-byte cartridge was staged through the framework uploader. The loader confirmed 25652 code bytes, 29468 executable-memory bytes and 2284 audio bytes. `g_fb` was resolved again from the unchanged host ELF before capture. The mono run collected 1225098 PCM bytes, peak 10685 and no full-scale clipping. Pause silence and resumed audio were measured. Evidence is under `build/qemu-opening/`; software stereo previews remain separate from target hardware validation.

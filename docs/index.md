@@ -16,3 +16,5 @@ This directory is the academic documentation set for *Vega Assault*. It treats t
 12. [IP, Ethics, and Fan-Work Scope](ip_ethics.md)
 
 - [Gamefield screenshot gallery](screenshots.md): actual QEMU enemy waves, firing, pause and resume.
+
+- [Gameplay video](demo.md): a short native gameplay capture with the original stereo soundtrack.

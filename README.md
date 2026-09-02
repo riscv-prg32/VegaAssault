@@ -14,11 +14,15 @@ The refined sprites use inked silhouettes, shaded armor, articulated limbs and d
 
 More actual gamefield captures—combat, pause and resume—are in the [screenshot gallery](docs/screenshots.md). The refreshed [Store icon](store/icon.png) and [splash artwork](store/splash.png) accompany the 1.2.0 bundle.
 
+[Watch the 15-second gameplay demo with stereo soundtrack](docs/media/vega-assault-demo.mp4) · [Capture details and reproduction](docs/demo.md).
+
+The demo shows title, stage introduction and combat using the native game renderer with synchronized software-rendered stereo music. It contains no sound effects.
+
 ## Educational purpose
 
 The repository is intentionally written as a teaching artifact. Every nonblank C source line is accompanied by an `EDUCATIONAL` comment. The implementation emphasizes explicit finite-state machines, static arrays, deterministic integer logic, the PRG32 ABI, RGB565 graphics, compact audio sequencing, reproducible asset generation, and a hard cartridge-size budget. See [docs/educational_design.md](docs/educational_design.md).
 
-The original soundtrack uses eight-bar stage-specific phrases with matching chord progressions, sustained lead and centered bass, and a quieter arpeggio on the right. Moderate stereo separation keeps both parts present in each speaker, and attract mode lowers all three voices. See [audio design and validation](docs/audio.md). The revised cartridge passed an [ESP32-C3 QEMU mono-audio smoke test](docs/qemu.md#updated-soundtrack-smoke-test-2026-09-02), including firing, pause silence and resumed playback; stereo and physical ESP32-C6 listening remain unverified.
+The original soundtrack uses a dramatic minor-key opening, vocal-like repeated calls, sustained brass answers, galloping accompaniment and centered bass pickups. Unequal note lengths and baked-in instrumental attacks bring a stronger heroic opening-theme feel through newly authored melodies and synthesized waveforms. Moderate stereo separation preserves both parts in each speaker. Run `python3 tools/preview_music.py` for stereo/mono listening previews of all three stages. See [audio design and validation](docs/audio.md). This revision passed an ESP32-C3 QEMU mono-audio smoke test; physical ESP32-C6 and hardware stereo listening remain unverified.
 
 ## Controls
 

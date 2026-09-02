@@ -45,13 +45,17 @@ reset();stage=st;music_reset();note_hash=0;for(voice=0;voice<3;voice++)note_coun
 // EDUCATIONAL: Run exactly one phrase and require a clean wrap to the initial subdivision.
 for(i=0;i<448;i++)music_update();assert(music_step==0&&music_tick==0);
 // EDUCATIONAL: Arpeggio and bass retain distinct rhythms, and deliberate melody rests reduce its note count.
-assert(note_count[1]==64&&note_count[2]==16&&note_count[0]>24&&note_count[0]<32);
+assert(note_count[1]==48&&note_count[2]==24&&note_count[0]>24&&note_count[0]<32);
 // EDUCATIONAL: Repeat from reset and compare every emitted note, channel and velocity in order.
 first=note_hash;music_reset();note_hash=0;for(i=0;i<448;i++)music_update();assert(note_hash==first);
 // EDUCATIONAL: End per-stage sequence coverage.
 }
-// EDUCATIONAL: Check the first stage melody sustains across an arpeggio event, then rests while bass sustains.
-reset();music_reset();for(i=0;i<14;i++)music_update();assert(note_active[0]&&note_active[2]);for(i=0;i<7;i++)music_update();assert(!note_active[0]&&note_active[2]);
+// EDUCATIONAL: Hold the opening call across two subdivisions, then articulate repeated pitches and the pickup.
+reset();music_reset();note_count[0]=0;for(i=0;i<14;i++)music_update();assert(note_active[0]&&note_count[0]==1);
+// EDUCATIONAL: The next two subdivisions retrigger the chant while the bass remains active.
+for(i=0;i<14;i++)music_update();assert(note_active[0]&&note_active[2]&&note_count[0]==3);
+// EDUCATIONAL: The sixth subdivision ends the call; the following pickup starts a fresh lead note.
+for(i=0;i<21;i++)music_update();assert(!note_active[0]);for(i=0;i<7;i++)music_update();assert(note_active[0]);
 // EDUCATIONAL: Attract must lower every voice relative to its combat level.
 state=ST_ATTRACT;music_reset();for(i=0;i<7;i++)music_update();assert(note_volume[0]<112&&note_volume[1]<84&&note_volume[2]<104);
 // EDUCATIONAL: Game-over must stay silent over a complete phrase duration.

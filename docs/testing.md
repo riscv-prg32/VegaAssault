@@ -44,3 +44,17 @@ The refined 24-frame artwork passed the educational-comment checker, C99 warning
 The portable package remains 26520 bytes, with 29372 bytes of executable memory; the 15040-byte index data and 28-byte palette do not grow. Store ZIP CRC, manifest parsing, cartridge bytes and refreshed artwork were verified. The native gameplay capture and all sprite/Store previews were visually inspected. These checks do not establish physical ESP32-C6 rendering, full target playthrough coverage, stereo quality or frame timing.
 
 The subsequent [sprite QEMU smoke test](qemu.md#sprite-refinement-smoke-test-2026-09-02) also passed, with captured title, gameplay, firing, pause and resume screens. The README gameplay image was refreshed from that actual ESP32-C3 framebuffer.
+
+
+## Heroic soundtrack validation (2026-09-03)
+
+The C99 warnings-as-errors build, educational checker, sanitizer gameplay tests and all ten Python audio/Store tests passed. The phrase checks now expect 48 accompaniment notes and explicitly verify its opening rest alongside held bass. Repeated sample generation preserved bytes. The cartridge is 26812 bytes, executable memory 29420 bytes, and audio block 1108 bytes. Store ZIP CRC and embedded cartridge equality passed.
+
+The software preview captured three full phrases from the C sequencer: stereo peak 6418 and mono peak 7061 at master volume 255, with distinct channels and no full-scale clipping. This does not test target audio hardware. The fresh ESP32-C3 QEMU run loaded 25604 code bytes, 29420 memory bytes and 1108 audio bytes. Its mono capture contained 1224216 bytes (about 27.76 seconds), peak 13936, and no full-scale clipping. The last second of pause was silent; the last second after resume had peak 6525. Framebuffer inspection confirmed gameplay, pause and resumed play. See `build/qemu-heroic/` for local logs, WAV, marks and framebuffer evidence. Hardware stereo listening, full target stage/boss playthroughs and physical ESP32-C6 remain unverified.
+
+
+## Opening-theme refinement validation (2026-09-03, current)
+
+C99 warnings-as-errors, educational comments, sanitizer gameplay regressions and all ten Python tests passed. Updated music tests cover repeated-note articulation, holds, breath/pickup events, 24 bass notes, phrase wrap and deterministic replay for all three stages. Sample regeneration preserved bytes. Store ZIP CRC, manifest JSON and embedded cartridge equality passed. Package size is 28036 bytes; executable memory is 29468 bytes and audio is 2284 bytes.
+
+The updated software preview respects attack/sustain loop offsets and covers all three complete phrases. Stereo peak was 5696, mono peak 5987, with distinct stereo channels and no full-scale clipping. A fresh ESP32-C3 QEMU run loaded this revision and captured 1225098 mono PCM bytes, peak 10685, without full-scale clipping. The final paused second was silent; the final resumed second peaked at 5945. Local evidence is in `build/qemu-opening/`. Hardware stereo listening, full target playthroughs and ESP32-C6 remain unverified.
