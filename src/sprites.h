@@ -9,17 +9,17 @@ extern const uint8_t grendizer_0[576];
 // EDUCATIONAL: This generated declaration supports compact RGB565 sprite rendering.
 extern const uint8_t grendizer_1[576];
 // EDUCATIONAL: This generated declaration supports compact RGB565 sprite rendering.
-extern const uint8_t grendizer_2[576];
-// EDUCATIONAL: This generated declaration supports compact RGB565 sprite rendering.
 extern const uint8_t grendizer_spazer[768];
 // EDUCATIONAL: This generated declaration supports compact RGB565 sprite rendering.
-extern const uint8_t transform_0[768];
+extern const uint8_t solo_spazer[768];
 // EDUCATIONAL: This generated declaration supports compact RGB565 sprite rendering.
-extern const uint8_t transform_1[768];
+extern const uint8_t double_spazer[768];
 // EDUCATIONAL: This generated declaration supports compact RGB565 sprite rendering.
-extern const uint8_t transform_2[768];
+extern const uint8_t marine_spazer[768];
 // EDUCATIONAL: This generated declaration supports compact RGB565 sprite rendering.
-extern const uint8_t transform_3[768];
+extern const uint8_t drill_spazer[768];
+// EDUCATIONAL: This generated declaration supports compact RGB565 sprite rendering.
+extern const uint8_t all_spazers[768];
 // EDUCATIONAL: This generated declaration supports compact RGB565 sprite rendering.
 extern const uint8_t enemy0_0[256];
 // EDUCATIONAL: This generated declaration supports compact RGB565 sprite rendering.

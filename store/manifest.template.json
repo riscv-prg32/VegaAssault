@@ -2,9 +2,9 @@
   "abi": "prg32-metadata-1.0",
   "id": "org.riscv-prg32.grendizer-vega-assault-86",
   "title": "Vega Assault",
-  "version": "1.2.0",
-  "summary": "A compact mecha arcade shooter with shaded original pixel art, animated docking, three stages, distinct bosses and stereo chiptune music.",
-  "description": "Defend Earth across three arcade stages with Screw Crusher, Double Harken and Space Thunder. Version 1.2.0 refines all 24 sprite frames with inked armor, articulated limbs, swept docking wings and distinct winged, carapaced and siege bosses. Includes transformations, multiple enemy families, attract mode and original stereo chiptune/SFX. Unofficial, non-commercial educational fan work; no traced anime/manga artwork, extracted sprites, production logos or soundtrack recordings are included. Third-party names and fictional properties remain with their rights holders.",
+  "version": "1.4.0",
+  "summary": "Five mecha missions with Special Cosmo assembly, lunar transformations, NPC Spazer support and an animated escape finale.",
+  "description": "Launch from a hidden base and defend Earth. Fly Double Spazer in the sky, Marine Spazer underwater and Drill Spazer underground. Assemble Special Cosmo and launch to the Moon, where Grendizer cycles between Spazer, Robot and combined forms with three NPC escorts. Destroy the Vega Moon base and watch the animated flight home. Original pixel art and stereo chiptune/SFX. Unofficial non-commercial educational fan work; no ripped artwork or recordings.",
   "authors": [
     "PRG32 Grendizer fan-game contributors"
   ],

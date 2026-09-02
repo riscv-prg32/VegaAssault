@@ -59,3 +59,21 @@ The 26812-byte revision was staged with the framework uploader into the existing
 ## Opening-theme refinement smoke test (2026-09-03)
 
 The current 28036-byte cartridge was staged through the framework uploader. The loader confirmed 25652 code bytes, 29468 executable-memory bytes and 2284 audio bytes. `g_fb` was resolved again from the unchanged host ELF before capture. The mono run collected 1225098 PCM bytes, peak 10685 and no full-scale clipping. Pause silence and resumed audio were measured. Evidence is under `build/qemu-opening/`; software stereo previews remain separate from target hardware validation.
+
+## Five-mission campaign smoke test (2026-09-03)
+
+The final 29008-byte portable cartridge was staged into the existing ESP32-C3 QEMU flash with the normal framework uploader. Its loader reported 26624 code bytes, 30440 executable-memory bytes and 2284 audio bytes. `g_fb` was resolved again from the host ELF at `0x3fc9fe7c`. Framebuffer inspection confirmed attract/title, the mountain/waterfall takeoff, subsequent Earth combat, Screw Crusher shots, pause and resumed gameplay. No guest panic or reset occurred in the final smoke run.
+
+The first candidate failed at the stage-introduction text lookup because GCC emitted a table containing absolute link-time pointers. The corrected source uses a fixed character matrix and prevents pointer-table conversion for support selection; the rebuilt game object contains no `R_RISCV_32` relocations. This demonstrates why native sanitizer tests complement rather than replace relocated target execution.
+
+The final run captured 1501164 mono PCM bytes (about 34 seconds), peak 11909, with no full-scale clipping. The last second before the pause capture was silent; the last second before the resume capture peaked at 11909. Evidence is under `build/qemu-campaign/`: serial log, marks, framebuffers, inspected PNGs and `mono.wav`. The final cartridge SHA-256 is `d43c45949573108f6352908564235d64179a4454b390b15fe25f3173992150d8`.
+
+This remains a first-stage target smoke test, not a complete five-stage QEMU playthrough. All five stage/boss transitions, docking and music indices pass native sanitizer tests; the campaign gallery is explicitly state-injected renderer evidence. Physical ESP32-C6, full target campaign playtesting and hardware stereo listening remain outstanding.
+
+## Special Cosmo target fixtures (2026-09-03)
+
+`tests/qemu_campaign.c` wraps the real cartridge with timed scene selection. It was built separately as **Cosmo QA fixture** (28128 code bytes, 31948 executable bytes, 2284 audio bytes), staged into the ESP32-C3 QEMU host, and observed through open-sky, underwater and underground combat, Cosmo assembly and launch, all three lunar player forms with NPC escorts, animated destruction/flight home, and victory. Framebuffers were inspected; no guest panic occurred. This is target execution of injected scenes, not a completed input-only campaign.
+
+The fixture's approximately 54-second mono capture contained 2378754 PCM bytes, peak 5987, with no clipped samples. Local evidence is in `build/qemu-cosmo/`. To reproduce the fixture build, pass `tests/qemu_campaign.c` to `python3 -m prg32 cartridge build` with `--portable --entry-prefix grendizer_c --audio-block build/audio.block` and a separate output filename, resolving paths from the PRG32 checkout. Never distribute the fixture as the playable release. The normal 30264-byte release was restored to QEMU flash afterward.
+
+The final release smoke run loaded 27880 code bytes, 31696 executable bytes and 2284 audio bytes without a guest panic. It captured 1455300 mono PCM bytes, peak 12249, with no clipping. Its SHA-256 is `d25000091078bafedc4ba7d6d46d3589fb2dc9c5b287eab5f2a2716ad9b2aa6a`. Native regressions additionally verify that player damage blinking never hides the independent NPC escorts. The 30.00-second stereo MP4 was decoded and visually inspected. Physical ESP32-C6 and a complete input-only target playthrough remain outstanding.

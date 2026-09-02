@@ -205,21 +205,38 @@ def boss(kind=0, anim=0):
     return a
 
 
-def transform_frame(step):
-    """Keep docking frames and the final flight sprite geometrically consistent."""
-    if step == 3:
-        return robot_frame(spazer=True, pose=1)
+def support_frame(kind):
+    """Original 32x24 support craft; four old docking slots keep storage constant."""
     a = blank(32, 24)
-    for y, row in enumerate(robot_frame(pose=step % 3)):
-        a[y][4:28] = row
-    flight_shell(a, step)
+    for side in (-1, 1):
+        def p(x, y):
+            return (15 + side*x if side < 0 else 16 + side*x, y)
+        # Double: swept red wings; Marine: blue fins; Drill: twin gold augers.
+        color = (R, B, Y, R)[kind]
+        panel(a, [p(2, 9), p(14, 3 if kind == 0 else 8), p(15, 17), p(5, 21)], color)
+        line(a, *p(5, 12), *p(13, 10), LG)
+        panel(a, [p(8, 7), p(11, 7), p(12, 21), p(7, 21)], DB)
+        if kind >= 2:
+            panel(a, [p(9, 0), p(13, 12), p(5, 12)], Y)
+            for y in (6, 9): line(a, *p(7, y), *p(11, y), S)
+        if kind in (1, 3):
+            panel(a, [p(3, 13), p(15, 18), p(9, 23), p(2, 20)], B)
+        rect(a, *p(9, 19), 2, 3, C)
+    panel(a, [(15, 2), (19, 10), (19, 20), (12, 20), (12, 10)], LG)
+    rect(a, 14, 7, 3, 5, C)
     return a
 
 
 assets=[]
-for i in range(3): assets.append((f'grendizer_{i}',robot_frame(variant=i&1,pose=i)))
+for i in range(2): assets.append((f'grendizer_{i}',robot_frame(variant=i&1,pose=i)))
 assets.append(('grendizer_spazer',robot_frame(spazer=True,pose=1)))
-for i in range(4): assets.append((f'transform_{i}',transform_frame(i)))
+solo = blank(32, 24)
+flight_shell(solo)
+panel(solo, [(12, 5), (19, 5), (22, 14), (9, 14)], B)
+rect(solo, 14, 7, 4, 4, C)
+assets.append(('solo_spazer', solo))
+for i, name in enumerate(('double_spazer', 'marine_spazer', 'drill_spazer', 'all_spazers')):
+    assets.append((name, support_frame(i)))
 for k in range(4):
     for an in range(2): assets.append((f'enemy{k}_{an}',enemy_robot(k,an)))
 for an in range(2): assets.append((f'saucer_{an}',saucer(0,an)))

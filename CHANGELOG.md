@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.0 — Special Cosmo and lunar escort finale
+
+- Animate three-craft assembly, Moon launch, base destruction and flight home.
+- Clarify sky, underwater and underground environments.
+- Cycle lunar Spazer/Robot/combined player forms with three firing NPC escorts.
+- Replace the demo with a 30-second campaign montage and extend transition tests.
+
+## 1.3.0 — Five-mission campaign
+
+- Add an animated mountain/waterfall secret-base takeoff before Earth Defense.
+- Add distinct Double, Marine and Drill Spazer missions and docking screens.
+- Finish on the Moon with the combined craft, stationary Vega base boss and burning-base victory.
+- Reuse four docking sprite slots and three music themes; preserve cartridge and executable RAM limits.
+- Extend sanitizer regressions and add reproducible campaign visual fixtures.
+
 ## 1.2.0 - 2026-09-02
 
 - Refine all 24 sprites with original inked armor, articulated poses and distinct boss silhouettes; preserve frame dimensions and the 15,068-byte indexed-art footprint.

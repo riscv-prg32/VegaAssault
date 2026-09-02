@@ -17,6 +17,14 @@
  */
 
 // EDUCATIONAL: Define a compile-time constant so the runtime uses fixed memory and inexpensive integer comparisons.
+#define ST_LAUNCH 9
+// EDUCATIONAL: Special Cosmo assembly and departure are isolated from combat.
+#define ST_COSMO 10
+// EDUCATIONAL: The Moon-base destruction triggers a timed animated epilogue before victory.
+#define ST_ENDING 11
+// EDUCATIONAL: Five fixed missions share existing entity pools and three original music phrases.
+#define STAGE_COUNT 5
+// EDUCATIONAL: Logical viewport width matches the portable display ABI.
 #define SW 320
 // EDUCATIONAL: Define a compile-time constant so the runtime uses fixed memory and inexpensive integer comparisons.
 #define SH 200
@@ -137,10 +145,10 @@ static void clear_entities(void){int i;for(i=0;i<MAX_SHOTS;i++)shots[i].active=0
 static void music_off(void){prg32_audio_note_off(0);prg32_audio_note_off(1);prg32_audio_note_off(2);}
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void music_reset(void){music_tick=0;music_step=0;music_off();}
-// EDUCATIONAL: Precondition: initialized game and stage 1..3; advances only fixed music counters, emits portable note calls, uses O(1) time/memory and no RNG.
+// EDUCATIONAL: Precondition: initialized game and stage 1..5; advances only fixed music counters, emits portable note calls, uses O(1) time/memory and no RNG.
 static void music_update(void){
 // EDUCATIONAL: Select one immutable original melody without allocating or copying note data.
-const uint8_t *lead=stage==1?lead1:(stage==2?lead2:lead3);
+const uint8_t *lead=(stage-1)%3==0?lead1:((stage-1)%3==1?lead2:lead3);
 // EDUCATIONAL: Local integer values describe chord position, note and performance dynamics.
 int chord,root,third,degree,n,quiet,event;
 // EDUCATIONAL: Game-over remains silent; the main update already freezes this function during pause.
@@ -152,7 +160,7 @@ music_tick=0;
 // EDUCATIONAL: Each chord occupies sixteen subdivisions; a full phrase occupies sixty-four.
 chord=music_step/16;
 // EDUCATIONAL: Read the stage-specific root and third shared by all accompaniment notes.
-root=music_roots[stage-1][chord];third=music_thirds[stage-1][chord];
+root=music_roots[(stage-1)%3][chord];third=music_thirds[(stage-1)%3][chord];
 // EDUCATIONAL: Attract mode reduces every part rather than leaving accompaniment at combat volume.
 quiet=state==ST_ATTRACT;
 // EDUCATIONAL: Unequal note lengths create short repeated calls followed by long answering notes.
@@ -202,9 +210,9 @@ static void init_stars(void){int i;for(i=0;i<MAX_STARS;i++){stars[i].x=(int)(rnd
 static void update_stars(void){int i;for(i=0;i<MAX_STARS;i++){stars[i].y+=stars[i].s;if(stars[i].y>=SH){stars[i].y=18;stars[i].x=(int)(rnd()%SW);}}}
 
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
-static void start_stage_intro(void){clear_entities();timer=0;state=ST_STAGE_INTRO;spazer_mode=stage>=2;music_reset();}
+static void start_stage_intro(void){clear_entities();timer=0;state=ST_STAGE_INTRO;spazer_mode=stage-1;px=148;py=164;stage_scroll=0;music_reset();}
 // EDUCATIONAL: Precondition: initialization completed; resets run state, RNG and stars; O(entity capacities); resets music through portable note-off calls.
-static void new_game(void){px=148;py=164;lives=3;score=0;stage=1;stage_kills=0;energy=5;invuln=0;combo=0;screw_cd=harken_cd=thunder_cd=0;spazer_mode=0;stage_scroll=0;frame=0;rng=0x4752454eu;init_stars();start_stage_intro();}
+static void new_game(void){px=148;py=164;lives=3;score=0;stage=1;stage_kills=0;energy=5;invuln=0;combo=0;screw_cd=harken_cd=thunder_cd=0;spazer_mode=0;stage_scroll=0;frame=0;rng=0x4752454eu;init_stars();start_stage_intro();state=ST_LAUNCH;}
 
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void spawn_enemy(int slot,int kind,int x,int y){Enemy *e=&enemies[slot];e->x=x;e->y=y;e->kind=kind;e->dx=(rnd()&1u)?1:-1;e->dy=1;e->hp=1+kind/2+stage/3;e->phase=(int)(rnd()%64u);e->anim=0;e->active=1;}
@@ -278,9 +286,9 @@ static void begin_transform(void){timer=0;state=ST_TRANSFORM;clear_entities();pr
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void begin_play(void){timer=0;state=ST_PLAY;stage_kills=0;fill_wave();}
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
-static void begin_boss(void){clear_entities();state=ST_BOSS;timer=0;boss_x=136;boss_y=32;boss_dx=2;boss_phase=0;boss_timer=0;boss_max=24+stage*12;boss_hp=boss_max;}
+static void begin_boss(void){clear_entities();state=ST_BOSS;timer=0;boss_x=136;boss_y=32;boss_dx=stage==5?0:2;boss_phase=0;boss_timer=0;boss_max=24+stage*12;boss_hp=boss_max;}
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
-static void next_stage(void){if(stage>=3){state=ST_WIN;timer=0;music_reset();}else{stage++;start_stage_intro();}}
+static void next_stage(void){if(stage>=STAGE_COUNT){clear_entities();state=ST_ENDING;timer=0;music_reset();}else{stage++;start_stage_intro();if(stage==5)state=ST_COSMO;}}
 
 // EDUCATIONAL: Precondition: combat state; moves bounded shots and resolves enemy/boss damage; O(MAX_SHOTS*MAX_ENEMIES); emits portable hit sounds and returns immediately on stage completion.
 static void update_shots(void){int i,j;for(i=0;i<MAX_SHOTS;i++){Shot *s=&shots[i];if(!s->active)continue;s->x+=s->dx;s->y+=s->dy;if(s->kind==W_HARKEN&&s->life==28)s->dx=-s->dx;s->life--;if(s->life<=0||s->y<18||s->x<-8||s->x>328){s->active=0;continue;}if(state==ST_BOSS&&hit(s->x,s->y,s->kind==W_THUNDER?8:5,8,boss_x,boss_y,48,24)){boss_hp-=s->damage;s->active=0;score+=30*s->damage;prg32_audio_play_sample_pan(SFX_BLAST,100,650,(int8_t)panx(boss_x));if(boss_hp<=0){score+=1500*stage;prg32_audio_play_sample_pan(SFX_BOOM,250,560,(int8_t)panx(boss_x));timer=0;next_stage();return;}continue;}for(j=0;j<MAX_ENEMIES;j++){Enemy *e=&enemies[j];if(e->active&&hit(s->x,s->y,6,8,e->x,e->y,16,16)){e->hp-=s->damage;s->active=0;if(e->hp<=0)kill_enemy(e);break;}}}}
@@ -297,7 +305,7 @@ else if(stage==2){d=(boss_phase&1)?1:-1;enemy_fire(boss_x+24,boss_y+19,d,4,2);en
 // EDUCATIONAL: Handle the complementary branch of the preceding gameplay condition.
 else{d=(boss_phase%5)-2;enemy_fire(boss_x+24,boss_y+19,d,4,2);enemy_fire(boss_x+24,boss_y+19,-d,3,2);if((boss_phase%3)==0){enemy_fire(boss_x+5,boss_y+14,-2,4,0);enemy_fire(boss_x+43,boss_y+14,2,4,0);}}boss_phase++;}
 // EDUCATIONAL: Precondition: ST_BOSS; advances bounded boss position and firing timer; O(MAX_ESHOTS); creates hostile shots without direct ABI calls.
-static void update_boss(void){boss_x+=boss_dx;if(boss_x<10||boss_x>262)boss_dx=-boss_dx;if(stage>=2&&((frame&63)==0))boss_y+=((boss_phase&1)?5:-5);if(boss_y<24)boss_y=24;if(boss_y>80)boss_y=80;if(++boss_timer>22-stage*3){boss_timer=0;boss_fire_pattern();}}
+static void update_boss(void){boss_x+=boss_dx;if(boss_x<10||boss_x>262)boss_dx=-boss_dx;if(stage>=2&&stage<5&&((frame&63)==0))boss_y+=((boss_phase&1)?5:-5);if(boss_y<24)boss_y=24;if(boss_y>80)boss_y=80;if(++boss_timer>22-stage*3){boss_timer=0;boss_fire_pattern();}}
 
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void update_play_input(uint32_t in){int both=(in&PRG32_BTN_A)&&(in&PRG32_BTN_B);if(in&PRG32_BTN_LEFT)px-=3;if(in&PRG32_BTN_RIGHT)px+=3;if(in&PRG32_BTN_UP)py-=2;if(in&PRG32_BTN_DOWN)py+=2;if(px<3)px=3;if(px>293)px=293;if(py<116)py=116;if(py>170)py=170;if(both)fire_thunder();else{if(in&PRG32_BTN_A)fire_screw();if(in&PRG32_BTN_B)fire_harken();}}
@@ -347,14 +355,20 @@ if(invuln)invuln--;
 if(state==ST_ATTRACT){if(pressed&(PRG32_BTN_A|PRG32_BTN_B|PRG32_BTN_START)){state=ST_TITLE;timer=0;}else if(timer>280){timer=0;attract_page=(attract_page+1)%3;}return;}
 // EDUCATIONAL: Start a reproducible run or return an idle title to the attract loop.
 if(state==ST_TITLE){if(pressed&(PRG32_BTN_A|PRG32_BTN_B|PRG32_BTN_START))new_game();else if(timer>420){state=ST_ATTRACT;timer=0;}return;}
+// EDUCATIONAL: Launch lasts 180 ticks; only after takeoff can the Earth introduction begin.
+if(state==ST_LAUNCH){if(timer>=180)start_stage_intro();return;}
+// EDUCATIONAL: Both noninteractive sequences finish after 240 ticks, with no hostile updates.
+if(state==ST_COSMO||state==ST_ENDING){if(timer>=240){if(state==ST_COSMO)start_stage_intro();else{state=ST_WIN;timer=0;}}return;}
 // EDUCATIONAL: Stage introductions transition to play or docking after their fixed duration.
-if(state==ST_STAGE_INTRO){if(timer>75){if(stage>=2)begin_transform();else begin_play();}return;}
+if(state==ST_STAGE_INTRO){if(timer>75){if(stage>=2&&stage<5)begin_transform();else begin_play();}return;}
 // EDUCATIONAL: Docking completes before any combat updates are allowed.
 if(state==ST_TRANSFORM){if(timer>120)begin_play();return;}
 // EDUCATIONAL: Terminal states wait for a new action and never process lingering collisions.
 if(state==ST_OVER||state==ST_WIN){if(pressed&(PRG32_BTN_A|PRG32_BTN_B|PRG32_BTN_START)){state=ST_TITLE;timer=0;music_reset();}return;}
 // EDUCATIONAL: Apply movement and weapon input to the current combat scene.
 update_play_input(in);
+// EDUCATIONAL: Lunar escorts fire staggered shots from the same fixed pool without consuming player energy.
+if(stage==5&&stage_scroll%150==0){int escort=(stage_scroll/150)%3;shot_add(W_SCREW,72+escort*80,108,0,-7,1,35);}
 // EDUCATIONAL: Resolve player attacks, which may end a stage or win the game.
 update_shots();
 // EDUCATIONAL: A stage transition ends this frame transaction before enemy damage can overwrite it.
@@ -383,18 +397,54 @@ prg32_sprite_draw_frame(x,y,w,h,sprite_pixels,0,0xffff);
 
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void stars_draw(void){int i;for(i=0;i<MAX_STARS;i++)prg32_gfx_rect(stars[i].x,stars[i].y,stars[i].s==3?2:1,1,PRG32_COLOR_WHITE);}
-// EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
-static void terrain_draw(void){int x,o=stage_scroll;if(stage==1){prg32_gfx_rect(0,137,SW,63,0x03e0);for(x=-32;x<352;x+=32){int h=18+((x+o/3)&31);prg32_gfx_rect(x-(o/2)%32,137-h,32,h,0x2104);}prg32_gfx_rect(0,158,SW,42,0x7a20);}
-// EDUCATIONAL: Handle the complementary branch of the preceding gameplay condition.
-else if(stage==2){prg32_gfx_rect(0,142,SW,58,0x0210);for(x=0;x<SW;x+=24)prg32_gfx_rect(x-((o/2)%24),151+((x/24)&1)*4,18,2,PRG32_COLOR_CYAN);prg32_gfx_rect(0,172,SW,28,0x7a20);}
-// EDUCATIONAL: Handle the complementary branch of the preceding gameplay condition.
-else stars_draw();}
-// EDUCATIONAL: Precondition: initialized player state; decodes and draws one generated frame; O(sprite pixels); changes scratch buffer and framebuffer through portable sprite drawing.
-static void player_draw(void){const uint8_t *s;if(spazer_mode)sprite_draw(px-4,py,32,24,grendizer_spazer);else{s=((frame>>3)%3==0)?grendizer_1:grendizer_0;sprite_draw(px,py,24,24,s);}}
+// EDUCATIONAL: Precondition: stage 1..5; returns immutable mission text; O(1), no state changes or ABI calls.
+static const char mission_names[5][16]={"EARTH DEFENSE","DOUBLE SPAZER","MARINE SPAZER","DRILL SPAZER","VEGA MOON BASE"};
+// EDUCATIONAL: Precondition: stage 1..5; compute a position-relative row address rather than a table of unrelocated pointers; O(1), no ABI or state effects.
+static const char *mission_name(void){return mission_names[stage-1];}
+// EDUCATIONAL: Precondition: stage 2..5; volatile local reads prevent GCC pointer lookup tables that retain link-time addresses on relocated hosts; O(1), no game-state or ABI effects.
+static const uint8_t *support_sprite(void){volatile int mission=stage;if(mission==2)return double_spazer;if(mission==3)return marine_spazer;if(mission==4)return drill_spazer;return all_spazers;}
+// EDUCATIONAL: Precondition: initialized stage; draws procedural terrain through portable rectangles; O(SW), framebuffer-only effects.
+static void terrain_draw(void){int x,o=stage_scroll;
+// EDUCATIONAL: Earth has green foothills; Double Spazer flies above bright cloud banks.
+if(stage==1){prg32_gfx_rect(0,110,SW,90,0x03e0);for(x=-32;x<352;x+=32)prg32_gfx_rect(x-(o/2)%32,137-((x+o/3)&31),32,63,0x2104);}
+// EDUCATIONAL: Double Spazer fights entirely in blue sky with small scrolling cloud banks.
+else if(stage==2){prg32_gfx_rect(0,18,SW,182,0x32d5);for(x=-48;x<368;x+=80){prg32_gfx_rect(x-(o/3)%80,55+(x+48)%70,44,8,0xd73a);prg32_gfx_rect(x+8-(o/3)%80,49+(x+48)%70,24,6,0xd73a);}}
+// EDUCATIONAL: Marine Spazer operates under a blue water surface with drifting bubbles.
+else if(stage==3){prg32_gfx_rect(0,28,SW,172,0x0210);for(x=0;x<SW;x+=24)prg32_gfx_rect(x,40+(x*3+o)%130,2,3,PRG32_COLOR_CYAN);}
+// EDUCATIONAL: Drill Spazer crosses a rocky tunnel, while the Moon exposes stars and a cratered surface.
+else{if(stage==5){stars_draw();prg32_gfx_rect(268,40,16,16,0x32d5);prg32_gfx_rect(271,44,6,7,0x5d4c);}else{prg32_gfx_rect(0,18,SW,182,0x2104);prg32_gfx_rect(0,18,SW,28,0x7a20);for(x=0;x<320;x+=40)prg32_gfx_rect(x,40,12,10+(x%23),0x7a20);}for(x=0;x<SW;x+=32)prg32_gfx_rect(x,150+(x+o/4)%23,24,40,stage==5?0x7493:0x7a20);}
+// EDUCATIONAL: End bounded terrain rendering without stored background bitmaps.
+}
+// EDUCATIONAL: Precondition: initialized launch timer; draws an original mountain waterfall hangar and takeoff; O(SW), portable graphics only, no simulation changes.
+static void launch_draw(void){int x,h,y=140-(timer>45?(timer-45):0);
+// EDUCATIONAL: Paint the sky and stepped mountain silhouette with constant-memory geometry.
+prg32_gfx_rect(0,0,320,200,0x1129);for(x=0;x<320;x+=8){h=100-(x>160?x-160:160-x)/2;prg32_gfx_rect(x,170-h,8,h,0x2948);}
+// EDUCATIONAL: The waterfall hides a dark hangar opening and a split launch door.
+prg32_gfx_rect(144,78,32,100,0x6f5e);prg32_gfx_rect(136,130,48,36,0x0842);prg32_gfx_rect(0,178,320,22,0x03e0);
+// EDUCATIONAL: Animate exhaust and vertical departure after the doors open; clipping is handled by the host sprite ABI.
+if(timer>45)prg32_gfx_rect(155,y+22,10,8+(timer&7),PRG32_COLOR_YELLOW);
+// EDUCATIONAL: Render the craft before both door leaves so the closed hangar conceals it.
+sprite_draw(144,y,32,24,grendizer_spazer);prg32_gfx_rect(136,130,24-(timer<45?timer/2:22),36,0x7493);prg32_gfx_rect(160+(timer<45?timer/2:22),130,24-(timer<45?timer/2:22),36,0x7493);
+// EDUCATIONAL: Identify the hidden base and launch event in the native eight-pixel font.
+prg32_gfx_text8(64,18,"SECRET BASE - LAUNCH",PRG32_COLOR_YELLOW,0x1129);
+// EDUCATIONAL: End the cinematic without allocating a framebuffer or consuming random numbers.
+}
+// EDUCATIONAL: Precondition: COSMO or ENDING with timer 0..239; animate convergence, departure or escape; O(stars+sprites), only portable framebuffer effects.
+static void cinematic_draw(void){int d=timer<120?120-timer:0,y=timer>120?100-(timer-120):100;
+// EDUCATIONAL: The distant Moon or Earth supplies a fixed destination while stars continue their deterministic motion.
+stars_draw();prg32_gfx_rect(144,30,32,24,state==ST_COSMO?0x7493:0x32d5);
+// EDUCATIONAL: Three craft converge from separate directions, then one Special Cosmo departs upward.
+if(state==ST_COSMO){prg32_gfx_text8(64,8,"SPECIAL COSMO",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);if(timer<120){sprite_draw(144-d,100,32,24,double_spazer);sprite_draw(144+d,100,32,24,marine_spazer);sprite_draw(144,100+d/2,32,24,drill_spazer);}else{sprite_draw(144,y,32,24,all_spazers);prg32_gfx_rect(156,y+24,8,8+(timer&7),PRG32_COLOR_YELLOW);}prg32_gfx_text8(72,180,"LAUNCH TO THE MOON",PRG32_COLOR_CYAN,PRG32_COLOR_BLACK);}
+// EDUCATIONAL: After destruction, expanding flashes surround ruins as the robot and all escorts fly home.
+else{int i;prg32_gfx_text8(48,8,"MOON BASE DESTROYED",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);prg32_gfx_rect(0,165,320,35,0x2948);for(i=0;i<6;i++)prg32_gfx_rect(104+i*18,160-(timer+i*7)%30,8+(timer&7),8,PRG32_COLOR_YELLOW);sprite_draw(144,y,32,24,grendizer_spazer);sprite_draw(100,y+24,32,24,double_spazer);sprite_draw(188,y+24,32,24,marine_spazer);sprite_draw(144,y+48,32,24,drill_spazer);}
+// EDUCATIONAL: Cinematic drawing never changes the clocks that control stage or victory transitions.
+}
+// EDUCATIONAL: Precondition: initialized player; renders generated craft and docked robot; O(sprite pixels), scratch/framebuffer changes via portable sprite ABI.
+static void player_draw(void){if(stage==5){int form=(stage_scroll/600)%3;sprite_draw(px-4,py,form==1?24:32,24,form==0?solo_spazer:form==1?grendizer_0:grendizer_spazer);}else if(spazer_mode){sprite_draw(px-4,py,32,24,support_sprite());if(stage<5)sprite_draw(px,py-5,24,24,grendizer_0);}else sprite_draw(px,py,24,24,((frame>>3)%3==0)?grendizer_1:grendizer_0);}
 // EDUCATIONAL: Precondition: valid active enemy pointer; selects its animation and renders it; O(sprite pixels); changes scratch buffer and framebuffer through the portable sprite ABI.
 static void enemy_draw(const Enemy *e){const uint8_t *s;if(e->kind==0)s=e->anim?saucer_1:saucer_0;else if(e->kind==1)s=e->anim?enemy0_1:enemy0_0;else if(e->kind==2)s=e->anim?enemy1_1:enemy1_0;else if(e->kind==3)s=e->anim?enemy2_1:enemy2_0;else s=e->anim?enemy3_1:enemy3_0;sprite_draw(e->x,e->y,16,16,s);}
-// EDUCATIONAL: Precondition: initialized boss for stage 1..3; draws a 48x24 frame; O(sprite pixels); changes scratch buffer and framebuffer through the portable sprite ABI.
-static void boss_draw(void){const uint8_t *s;if(stage==1)s=((frame>>3)&1)?boss0_1:boss0_0;else if(stage==2)s=((frame>>3)&1)?boss1_1:boss1_0;else s=((frame>>3)&1)?boss2_1:boss2_0;sprite_draw(boss_x,boss_y,48,24,s);}
+// EDUCATIONAL: Precondition: initialized boss for stage 1..5; draws a 48x24 frame; O(sprite pixels); changes scratch buffer and framebuffer through the portable sprite ABI.
+static void boss_draw(void){const uint8_t *s;if(stage==5){int x;prg32_gfx_rect(boss_x,boss_y+8,48,16,0x2948);for(x=0;x<48;x+=16){prg32_gfx_rect(boss_x+x,boss_y,12,24,0x7493);prg32_gfx_rect(boss_x+x+3,boss_y+6,6,4,PRG32_COLOR_RED);}prg32_gfx_rect(boss_x+18,boss_y+14,12,10,PRG32_COLOR_MAGENTA);return;}if(stage==1)s=((frame>>3)&1)?boss0_1:boss0_0;else if(stage==2)s=((frame>>3)&1)?boss1_1:boss1_0;else s=((frame>>3)&1)?boss2_1:boss2_0;sprite_draw(boss_x,boss_y,48,24,s);}
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void shots_draw(void){int i;for(i=0;i<MAX_SHOTS;i++)if(shots[i].active){Shot*s=&shots[i];if(s->kind==W_SCREW){prg32_gfx_rect(s->x,s->y,4,8,PRG32_COLOR_YELLOW);prg32_gfx_rect(s->x-2,s->y+2,8,2,PRG32_COLOR_WHITE);}else if(s->kind==W_HARKEN){prg32_gfx_rect(s->x,s->y,7,2,PRG32_COLOR_CYAN);prg32_gfx_rect(s->x+2,s->y-2,3,6,PRG32_COLOR_WHITE);}else{prg32_gfx_rect(s->x,s->y,6,10,PRG32_COLOR_CYAN);prg32_gfx_rect(s->x+2,18,2,s->y-18,PRG32_COLOR_YELLOW);}}for(i=0;i<MAX_ESHOTS;i++)if(eshots[i].active){uint16_t c=eshots[i].kind==2?PRG32_COLOR_MAGENTA:PRG32_COLOR_RED;prg32_gfx_rect(eshots[i].x,eshots[i].y,4,6,c);}}
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
@@ -407,4 +457,4 @@ static void attract_draw(void){if(attract_page==0){title_draw();prg32_gfx_text8(
 else{prg32_gfx_text8(96,28,"ENEMY FILE",PRG32_COLOR_RED,PRG32_COLOR_BLACK);sprite_draw(45,72,16,16,enemy0_0);sprite_draw(110,72,16,16,enemy1_0);sprite_draw(175,72,16,16,enemy2_0);sprite_draw(240,72,16,16,enemy3_0);prg32_gfx_text8(34,100,"BLADE",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(99,100,"CRAWLER",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(171,100,"BEAST",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(230,100,"GUNNER",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(84,164,"PRESS START",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);}}
 
 // EDUCATIONAL: Implement the PRG32 draw entry point: render the current state without changing gameplay semantics.
-void grendizer_c_draw(void){int i,tf;char n[12];prg32_gfx_clear(PRG32_COLOR_BLACK);if(stage==3||state<=ST_TITLE)stars_draw();if(state==ST_ATTRACT){attract_draw();return;}if(state==ST_TITLE){title_draw();return;}if(state==ST_STAGE_INTRO){terrain_draw();prg32_gfx_text8(116,64,"STAGE",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);num((unsigned)stage,n);prg32_gfx_text8(168,64,n,PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(80,90,stage==1?"EARTH DEFENSE":stage==2?"SPAZER SCRAMBLE":"VEGA STAR FRONT",PRG32_COLOR_CYAN,PRG32_COLOR_BLACK);return;}if(state==ST_TRANSFORM){terrain_draw();tf=timer/24;if(tf>3)tf=3;prg32_gfx_text8(78,44,"SPAZER - GO!",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);sprite_draw(144,82,32,24,tf==0?transform_0:tf==1?transform_1:tf==2?transform_2:transform_3);if(timer>96)prg32_gfx_text8(100,134,"DOCKING COMPLETE",PRG32_COLOR_CYAN,PRG32_COLOR_BLACK);return;}if(state==ST_OVER){prg32_gfx_text8(112,74,"GAME OVER",PRG32_COLOR_RED,PRG32_COLOR_BLACK);num((unsigned)score,n);prg32_gfx_text8(105,110,"SCORE",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(151,110,n,PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);prg32_gfx_text8(78,166,"PRESS START",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);return;}if(state==ST_WIN){prg32_gfx_text8(78,52,"VEGA FLEET DESTROYED",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);sprite_draw(144,86,32,24,grendizer_spazer);prg32_gfx_text8(96,126,"EARTH IS SAFE",PRG32_COLOR_CYAN,PRG32_COLOR_BLACK);num((unsigned)score,n);prg32_gfx_text8(105,150,"SCORE",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(151,150,n,PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);return;}terrain_draw();hud_draw();if(state==ST_BOSS||(state==ST_PAUSE&&previous_state==ST_BOSS)){boss_draw();prg32_gfx_text8(6,22,stage==1?"VEGA FORTRESS":stage==2?"SEA DESTROYER":"STAR COMMANDER",PRG32_COLOR_RED,PRG32_COLOR_BLACK);prg32_gfx_rect(130,23,(boss_hp*120)/boss_max,4,PRG32_COLOR_MAGENTA);}else for(i=0;i<MAX_ENEMIES;i++)if(enemies[i].active)enemy_draw(&enemies[i]);shots_draw();if(!invuln||((invuln>>2)&1)==0)player_draw();if(state==ST_PAUSE){prg32_gfx_rect(104,82,112,30,PRG32_COLOR_BLACK);prg32_gfx_text8(132,94,"PAUSE",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);}prg32_gfx_text8(4,189,"A SCREW  B HARKEN  A+B THUNDER",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);}
+void grendizer_c_draw(void){int i;char n[12];prg32_gfx_clear(PRG32_COLOR_BLACK);if(state<=ST_TITLE)stars_draw();if(state==ST_LAUNCH){launch_draw();return;}if(state==ST_COSMO||state==ST_ENDING){cinematic_draw();return;}if(state==ST_ATTRACT){attract_draw();return;}if(state==ST_TITLE){title_draw();return;}if(state==ST_STAGE_INTRO){terrain_draw();prg32_gfx_text8(116,64,"STAGE",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);num((unsigned)stage,n);prg32_gfx_text8(168,64,n,PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(80,90,mission_name(),PRG32_COLOR_CYAN,PRG32_COLOR_BLACK);return;}if(state==ST_TRANSFORM){terrain_draw();prg32_gfx_text8(78,44,mission_name(),PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);sprite_draw(144,82,32,24,support_sprite());if(stage<5)sprite_draw(148,18+(timer<64?timer:64),24,24,grendizer_0);if(timer>96)prg32_gfx_text8(100,134,"DOCKING COMPLETE",PRG32_COLOR_CYAN,PRG32_COLOR_BLACK);return;}if(state==ST_OVER){prg32_gfx_text8(112,74,"GAME OVER",PRG32_COLOR_RED,PRG32_COLOR_BLACK);num((unsigned)score,n);prg32_gfx_text8(105,110,"SCORE",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(151,110,n,PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);prg32_gfx_text8(78,166,"PRESS START",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);return;}if(state==ST_WIN){prg32_gfx_text8(78,52,"MOON BASE DESTROYED",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);terrain_draw();prg32_gfx_rect(136,170,48,10,0x2948);for(i=0;i<3;i++)prg32_gfx_rect(138+i*16,158+((timer+i*5)&7),8,12,PRG32_COLOR_YELLOW);sprite_draw(144,86,32,24,all_spazers);prg32_gfx_text8(96,126,"EARTH IS SAFE",PRG32_COLOR_CYAN,PRG32_COLOR_BLACK);num((unsigned)score,n);prg32_gfx_text8(105,150,"SCORE",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(151,150,n,PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);return;}terrain_draw();hud_draw();if(state==ST_BOSS||(state==ST_PAUSE&&previous_state==ST_BOSS)){boss_draw();prg32_gfx_text8(6,22,stage==5?"MOON BASE":stage==3?"SEA TYRANT":"VEGA BOSS",PRG32_COLOR_RED,PRG32_COLOR_BLACK);prg32_gfx_rect(130,23,(boss_hp*120)/boss_max,4,PRG32_COLOR_MAGENTA);}else for(i=0;i<MAX_ENEMIES;i++)if(enemies[i].active)enemy_draw(&enemies[i]);shots_draw();if(stage==5){sprite_draw(56,110,32,24,double_spazer);sprite_draw(136,106,32,24,marine_spazer);sprite_draw(216,110,32,24,drill_spazer);}if(!invuln||((invuln>>2)&1)==0)player_draw();if(state==ST_PAUSE){prg32_gfx_rect(104,82,112,30,PRG32_COLOR_BLACK);prg32_gfx_text8(132,94,"PAUSE",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);}prg32_gfx_text8(4,189,"A SCREW  B HARKEN  A+B THUNDER",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);}

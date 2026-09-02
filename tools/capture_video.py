@@ -2,7 +2,7 @@
 """Record native gameplay and synchronized stereo music into a short MP4.
 
 Uses the actual game update/draw functions, upstream software renderer, and
-scripted button input. Music uses the preview mixer model; SFX are omitted.
+explicit campaign scene fixtures and scripted combat input. Music uses the preview mixer model; SFX are omitted.
 Requires ffmpeg on PATH or FFMPEG pointing to an executable.
 """
 import json
@@ -16,7 +16,7 @@ import wave
 from capture_screen import FRAMEWORK, ROOT, renderer_source
 from preview_music import RATE, render
 
-TICKS = 450
+TICKS = 910
 
 
 def main():
@@ -35,10 +35,24 @@ def main():
     source += '''
 int main(void){
 grendizer_c_init();
-for(video_tick=0;video_tick<450;video_tick++){
+for(video_tick=0;video_tick<910;video_tick++){
 int target=px,nearest=-1;
-capture_input=(video_tick==0||video_tick==60)?PRG32_BTN_START:0;
+capture_input=0;
+if(video_tick==0)state=ST_TITLE;
+if(video_tick==30)new_game();
+if(video_tick==210||video_tick==270||video_tick==330||video_tick==390||video_tick==600){
+stage=video_tick==210?1:video_tick==270?2:video_tick==330?3:video_tick==390?4:5;
+start_stage_intro();begin_play();invuln=1001;
+}
+if(video_tick==450){stage=4;next_stage();}
+if(video_tick>=450&&video_tick<600)timer=(video_tick-450)*240/150;
+if(video_tick>=600&&video_tick<810)stage_scroll=(video_tick-600)*10;
+if(video_tick==750)begin_boss();
+if(video_tick==809){boss_hp=1;shot_add(W_SCREW,boss_x,boss_y+7,0,-7,1,35);}
+if(video_tick==810)assert(state==ST_ENDING);
+if(video_tick>=810)timer=(video_tick-810)*240/100;
 if(state==ST_PLAY||state==ST_BOSS){
+invuln=1001;
 capture_input=PRG32_BTN_A;
 if(state==ST_BOSS)target=boss_x+12;
 else for(int i=0;i<MAX_ENEMIES;i++){
@@ -49,7 +63,7 @@ if(target<px-3)capture_input|=PRG32_BTN_LEFT;
 if((video_tick%180)<12&&energy>=3)capture_input|=PRG32_BTN_B;
 }
 grendizer_c_update();grendizer_c_draw();
-assert(state!=ST_OVER&&state!=ST_WIN);
+assert(state!=ST_OVER);
 if(video_tick%30==0)fprintf(stderr,"STATE %d %d %d %d %d\\n",video_tick,state,stage,lives,score);
 for(int y=0;y<200;y++)for(int x=0;x<320;x++){
 uint16_t p=g_fb[(y+PRG32_VIEWPORT_Y)*320+x];
@@ -91,14 +105,14 @@ return ferror(stdout)?1:0;
     subprocess.run([ffmpeg, '-hide_banner', '-loglevel', 'warning', '-y',
                     '-f', 'rawvideo', '-pixel_format', 'rgb24', '-video_size', '320x200',
                     '-framerate', '1000/33', '-i', str(raw), '-i', str(audio),
-                    '-vf', 'scale=960:600:flags=neighbor,fade=t=out:st=14.25:d=0.6',
-                    '-af', 'afade=t=out:st=14.25:d=0.6',
+                    '-vf', 'scale=960:600:flags=neighbor,fade=t=out:st=29.4:d=0.6',
+                    '-af', 'afade=t=out:st=29.4:d=0.6',
                     '-c:v', 'libx264', '-crf', '18', '-preset', 'medium', '-pix_fmt', 'yuv420p',
                     '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart',
-                    '-shortest', str(video)], check=True)
+                    '-t', '30', str(video)], check=True)
     (output / 'capture.json').write_text(json.dumps({
-        'duration_seconds': TICKS * .033, 'ticks': TICKS, 'size': [960, 600],
-        'capture': 'native game update/draw with scripted portable button input',
+        'duration_seconds': 30, 'ticks': TICKS, 'size': [960, 600],
+        'capture': 'native campaign montage with explicit scene fixtures and accelerated cinematic/form timing',
         'audio': 'synchronized C note events, software stereo mixer model, no SFX',
         'stereo_pcm_peak': peak, 'states': states,
     }, indent=2) + '\n')

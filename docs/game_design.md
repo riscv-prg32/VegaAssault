@@ -17,3 +17,27 @@ A boss-defeating player shot ends the current combat update before hostile colli
 An attack is an all-or-nothing project transaction: Screw Crusher requires one free projectile slot; Harken and Thunder each require two. If capacity is insufficient, no shot is added, no energy is spent, no cooldown starts and no firing sound is emitted. The fixed pool remains allocation-free and the single-threaded update prevents capacity from changing between the check and insertion.
 
 Each wave now includes the saucer, blade, crawler, beast and gunner. Previously the wave generator replaced every gunner with a saucer, making its art and instruction entry unreachable. The gunner descends one pixel every eight phase ticks and fires every 64 phase ticks, with horizontal velocity directed toward the player at firing time. Blade enemies now clamp and turn inward at x=8 and x=296. These movement and cadence rules are project-specific; their difficulty still needs target playtesting.
+
+## Five-mission campaign (2026-09-03)
+
+These timings and settings are project choices, not PRG32 requirements. A fresh run enters `ST_LAUNCH` for 180 updates: the mountain waterfall hangar opens for 45 ticks and Grendizer climbs away during the remaining ticks. No combat input or collisions run during launch. The existing attract/title controls precede it; restarting plays it again.
+
+| Stage | Mission | Vehicle / setting |
+| --- | --- | --- |
+| 1 | Earth Defense | Grendizer / green foothills |
+| 2 | Double Spazer | Red swept wings / cloud banks |
+| 3 | Marine Spazer | Blue fins / underwater bubbles |
+| 4 | Drill Spazer | Twin gold augers / rocky tunnel |
+| 5 | Vega Moon Base | Cycling player forms and three NPC escorts / lunar terrain and distant Earth |
+
+Every stage introduction lasts 76 updates. Stages 2–4 then spend 121 updates docking before combat; individual craft receive an approaching Grendizer sprite. Stage entry resets player position and terrain scroll. Lives, score, energy and weapon rules carry through. Each mission uses the same bounded waves and its own stage-scaled boss health/cadence. The Moon base is stationary with a 48×24 collision envelope and three turret towers. Destruction starts the animated epilogue; victory follows after it completes.
+
+The three original music phrases repeat using `(stage-1)%3`; melody and harmony use the same index. No new audio samples or voices are needed. Supporting forms share the existing 16×19 player damage box and standard controls, keeping collision difficulty independent of decorative wings. No claim is made that the combined design or mission sequence reproduces an episode; both are original game arrangements.
+
+## Special Cosmo and lunar support
+
+After the Drill boss, `ST_COSMO` runs for 240 ticks. For 120 ticks Double, Marine and Drill converge from three directions; for 120 more their combined Special Cosmo flies toward the Moon with animated exhaust. The Moon introduction then begins directly before combat. This cinematic and `ST_ENDING` ignore combat input and cannot be skipped by held action buttons.
+
+Lunar player forms cycle every 120 active combat updates, using `(stage_scroll/600)%3`: standalone Spazer, Robot, then Spazer+Robot. All forms preserve the standard controls and damage box. Pause freezes the cycle. The three NPC escorts remain visible and fire one staggered shot every 30 combat ticks (one per escort every 90 ticks); they share the fixed shot pool, cost no player energy and cannot be controlled or damaged. Player attacks allocate first. Full pools simply omit an escort shot.
+
+Destroying the Moon boss enters `ST_ENDING` for 240 ticks. Pulsing explosions surround the ruins while Grendizer and all three escorts fly toward Earth; only then does `ST_WIN` accept a new game action. These are original project narrative and gameplay arrangements.

@@ -42,3 +42,7 @@ The first-stage harmony is now Em–C–Am–B, with an original lower-register 
 Music samples now contain several cycles of changing amplitude followed by a single sustained cycle. This provides a brass attack and plucked accompaniment/bass despite the host ignoring ADSR. Lead is 504 bytes with loop start 420; accompaniment is 336 bytes with loop start 252; bass is 676 bytes with loop start 507. Their base periods and tuning remain unchanged. The JSON loop metadata must agree with these final-cycle offsets when regenerating assets. The complete audio block is 2284 bytes. The preview tool now follows loop-start offsets so the attack plays once per note rather than repeating through sustain.
 
 The composition uses broad opening-theme conventions without importing a Grendizer melody, lyric, score or recording. This is an original stylistic homage, not a clearance determination for third-party rights.
+
+## Five-mission reuse
+
+The expanded campaign maps stages 1–5 to musical themes 1, 2, 3, 1, 2. Both melody and harmony use `(stage-1)%3`, preserving bounds and musical alignment. No samples, pans, voice counts or weapon sounds changed. Full phrase timing/replay is exercised for all five stages under sanitizers; stereo/mono software previews still pass without clipping.

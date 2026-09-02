@@ -7,7 +7,7 @@
 // EDUCATIONAL: Mock input and count portable audio/draw effects without requiring firmware.
 static uint32_t test_input;
 // EDUCATIONAL: Record music events and boss draws for pause verification.
-static int audio_events, boss_draws, sample_events;
+static int audio_events, boss_draws, sample_events, sprite_draws;
 // EDUCATIONAL: Fixed voice snapshots expose sustain, rest, dynamics and replay without real audio hardware.
 static int note_count[3], note_active[3], note_volume[3];
 // EDUCATIONAL: Hash ordered note events to compare complete deterministic phrases without allocating a log.
@@ -31,7 +31,7 @@ void prg32_sprite_draw_16x16(int x,int y,const uint16_t*s){(void)x;(void)y;(void
 // EDUCATIONAL: Precondition: sprite pointer; no output; O(1); mocks portable 24x24 sprite.
 void prg32_sprite_draw_24x24(int x,int y,const uint16_t*s){(void)x;(void)y;(void)s;}
 // EDUCATIONAL: Precondition: valid frame; counts boss sprites; O(1); mocks portable frame rendering.
-void prg32_sprite_draw_frame(int x,int y,int w,int h,const uint16_t*s,uint32_t f,uint16_t t){(void)x;(void)y;(void)h;(void)s;(void)f;(void)t;if(w==48)boss_draws++;}
+void prg32_sprite_draw_frame(int x,int y,int w,int h,const uint16_t*s,uint32_t f,uint16_t t){(void)x;(void)y;(void)h;(void)s;(void)f;(void)t;if(w==48)boss_draws++;sprite_draws++;}
 // EDUCATIONAL: Precondition: none; resets cartridge and mocked input; bounded by entity capacity; calls game init and new-game audio.
 static void reset(void){test_input=0;grendizer_c_init();new_game();begin_play();old_input=0;}
 // EDUCATIONAL: Precondition: host mocks installed; exercises all stage phrases and silence with bounded loops; changes game/music snapshots and calls the sequencer.
@@ -39,7 +39,7 @@ static void test_music(void){
 // EDUCATIONAL: Reserve deterministic replay snapshots and bounded loop counters on the stack.
 int st,i,voice;uint32_t first;
 // EDUCATIONAL: Verify every stage independently because each has different chord and melody data.
-for(st=1;st<=3;st++){
+for(st=1;st<=STAGE_COUNT;st++){
 // EDUCATIONAL: Start a full phrase in combat with a clean event checksum and voice counters.
 reset();stage=st;music_reset();note_hash=0;for(voice=0;voice<3;voice++)note_count[voice]=0;
 // EDUCATIONAL: Run exactly one phrase and require a clean wrap to the initial subdivision.
@@ -79,7 +79,7 @@ test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_PLAY&&timer==29
 // EDUCATIONAL: The paused boss remains visible beneath the overlay.
 begin_boss();previous_state=ST_BOSS;state=ST_PAUSE;boss_draws=0;grendizer_c_draw();assert(boss_draws==1);
 // EDUCATIONAL: A lethal final-boss hit and hostile shot coincide; victory must win this frame transaction.
-reset();stage=3;begin_boss();boss_hp=1;lives=1;shot_add(W_SCREW,boss_x,boss_y+7,0,-7,1,35);enemy_fire(px+4,py,0,3,0);grendizer_c_update();assert(state==ST_WIN&&lives==1);
+reset();stage=STAGE_COUNT;begin_boss();boss_hp=1;lives=1;shot_add(W_SCREW,boss_x,boss_y+7,0,-7,1,35);enemy_fire(px+4,py,0,3,0);grendizer_c_update();assert(state==ST_ENDING&&lives==1);
 // EDUCATIONAL: Losing the last life to the final escaping enemy must not start a boss.
 reset();clear_entities();lives=1;stage_kills=18;spawn_enemy(0,1,40,150);grendizer_c_update();assert(state==ST_OVER&&lives==0);
 // EDUCATIONAL: Harken reverses once then keeps moving inward on following frames.
@@ -89,7 +89,7 @@ reset();clear_entities();spawn_enemy(0,2,296,30);enemies[0].dx=1;update_enemies(
 // EDUCATIONAL: An 80-tick cadence must not fire at phase 16, unlike an invalid bit mask.
 reset();clear_entities();spawn_enemy(0,1,40,30);enemies[0].phase=15;update_enemies();assert(!eshots[0].active);enemies[0].phase=79;update_enemies();assert(eshots[0].active);
 // EDUCATIONAL: START remains detectable while the player holds A on the title.
-reset();state=ST_TITLE;old_input=PRG32_BTN_A;test_input=PRG32_BTN_A|PRG32_BTN_START;grendizer_c_update();assert(state==ST_STAGE_INTRO);
+reset();state=ST_TITLE;old_input=PRG32_BTN_A;test_input=PRG32_BTN_A|PRG32_BTN_START;grendizer_c_update();assert(state==ST_LAUNCH);
 // EDUCATIONAL: Capture initial star state, then disturb the attract loop before restarting.
 reset();new_game();for(i=0;i<MAX_STARS;i++)snapshot[i]=stars[i];seed=rng;for(i=0;i<77;i++)update_stars();frame=1234;new_game();assert(frame==0&&rng==seed);
 // EDUCATIONAL: Identical new games must restore the same star positions and speeds.
@@ -97,13 +97,25 @@ for(i=0;i<MAX_STARS;i++)assert(stars[i].x==snapshot[i].x&&stars[i].y==snapshot[i
 // EDUCATIONAL: Long boss motion remains bounded even when periodic vertical steps accumulate.
 reset();stage=2;begin_boss();for(i=0;i<10000;i++){frame++;update_boss();assert(boss_y>=24&&boss_y<=80);}
 // EDUCATIONAL: Boot must enter attract and accept two distinct START presses to begin a run.
-grendizer_c_init();test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_TITLE);test_input=0;grendizer_c_update();test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_STAGE_INTRO);
+grendizer_c_init();test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_TITLE);test_input=0;grendizer_c_update();test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_LAUNCH);
 // EDUCATIONAL: Each stage introduction and docking sequence completes within its documented tick budget.
-test_input=0;for(i=0;i<76;i++)grendizer_c_update();assert(state==ST_PLAY);stage=2;start_stage_intro();for(i=0;i<76;i++)grendizer_c_update();assert(state==ST_TRANSFORM);for(i=0;i<121;i++)grendizer_c_update();assert(state==ST_PLAY&&spazer_mode);
+test_input=0;for(i=0;i<179;i++){grendizer_c_update();assert(state==ST_LAUNCH);}grendizer_c_update();assert(state==ST_STAGE_INTRO);for(i=0;i<76;i++)grendizer_c_update();assert(state==ST_PLAY);stage=2;start_stage_intro();for(i=0;i<76;i++)grendizer_c_update();assert(state==ST_TRANSFORM);for(i=0;i<121;i++)grendizer_c_update();assert(state==ST_PLAY&&spazer_mode);
 // EDUCATIONAL: Clamp movement to the playfield and verify each standard weapon maps to its input.
 reset();px=3;py=116;update_play_input(PRG32_BTN_LEFT|PRG32_BTN_UP|PRG32_BTN_A);assert(px==3&&py==116&&shots[0].kind==W_SCREW);clear_entities();update_play_input(PRG32_BTN_B);assert(shots[0].kind==W_HARKEN&&shots[1].kind==W_HARKEN);clear_entities();energy=5;update_play_input(PRG32_BTN_A|PRG32_BTN_B);assert(energy==2&&shots[0].kind==W_THUNDER&&shots[1].kind==W_THUNDER);
 // EDUCATIONAL: Every boss advances to the following stage or victory through a real projectile collision.
-for(i=1;i<=3;i++){reset();stage=i;begin_boss();boss_hp=1;shot_add(W_SCREW,boss_x,boss_y+7,0,-7,1,35);grendizer_c_update();assert(state==(i==3?ST_WIN:ST_STAGE_INTRO));}
+for(i=1;i<=STAGE_COUNT;i++){reset();stage=i;begin_boss();boss_hp=1;shot_add(W_SCREW,boss_x,boss_y+7,0,-7,1,35);grendizer_c_update();assert(state==(i==STAGE_COUNT?ST_ENDING:i==4?ST_COSMO:ST_STAGE_INTRO));}
+// EDUCATIONAL: Each support mission selects its own craft, reaches combat and safely renders a paused boss.
+for(i=2;i<=STAGE_COUNT;i++){reset();stage=i;start_stage_intro();assert(spazer_mode==i-1);for(t=0;t<76;t++)grendizer_c_update();assert(state==(i==5?ST_PLAY:ST_TRANSFORM));grendizer_c_draw();if(i<5)for(t=0;t<121;t++)grendizer_c_update();assert(state==ST_PLAY);grendizer_c_draw();begin_boss();for(t=0;t<448;t++){music_update();update_boss();}assert(boss_y>=24&&boss_y<=80);if(i==5)assert(boss_x==136&&boss_y==32);previous_state=ST_BOSS;state=ST_PAUSE;grendizer_c_draw();}
+// EDUCATIONAL: Distinct immutable vehicle frames ensure every supporting craft remains reachable.
+stage=2;assert(support_sprite()==double_spazer);stage=3;assert(support_sprite()==marine_spazer);stage=4;assert(support_sprite()==drill_spazer);stage=5;assert(support_sprite()==all_spazers);
+// EDUCATIONAL: Special Cosmo blocks combat until all 240 assembly/launch ticks have elapsed.
+reset();stage=4;next_stage();assert(stage==5&&state==ST_COSMO);for(i=0;i<239;i++){grendizer_c_update();grendizer_c_draw();assert(state==ST_COSMO);}grendizer_c_update();assert(state==ST_STAGE_INTRO);
+// EDUCATIONAL: Ending remains animated for 240 ticks, ignores action input, then allows victory recovery.
+next_stage();assert(state==ST_ENDING);test_input=PRG32_BTN_A;for(i=0;i<239;i++){grendizer_c_update();grendizer_c_draw();assert(state==ST_ENDING);}grendizer_c_update();assert(state==ST_WIN);test_input=0;
+// EDUCATIONAL: Lunar escorts create a real projectile without charging energy, and pause freezes form progression.
+reset();stage=5;stage_scroll=0;clear_entities();energy=5;grendizer_c_update();assert(shots[0].active&&shots[0].damage==1&&energy==5);stage_scroll=600;test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_PAUSE);test_input=0;for(i=0;i<121;i++)grendizer_c_update();assert(stage_scroll==600);grendizer_c_draw();
+// EDUCATIONAL: Player damage blinking must never hide the three independent lunar NPC escorts.
+reset();stage=5;clear_entities();invuln=4;sprite_draws=0;grendizer_c_draw();assert(sprite_draws==3);invuln=0;sprite_draws=0;grendizer_c_draw();assert(sprite_draws==4);
 // EDUCATIONAL: Both terminal screens recover to title on a fresh START press.
 state=ST_OVER;old_input=0;test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_TITLE);state=ST_WIN;old_input=0;grendizer_c_update();assert(state==ST_TITLE);
 // EDUCATIONAL: A full shot pool must reject all weapons without charging resources or emitting a firing sound.

@@ -25,7 +25,7 @@ int main(void){
 // EDUCATIONAL: Reserve counters and initialize the cartridge exactly as the host would.
 int tick,x,y;grendizer_c_init();
 // EDUCATIONAL: Two separated START presses navigate attract and title; then hold A during combat without editing game state.
-for(tick=0;tick<112;tick++){capture_input=(tick==0||tick==2)?PRG32_BTN_START:(tick>=80?PRG32_BTN_A:0);grendizer_c_update();grendizer_c_draw();}
+for(tick=0;tick<292;tick++){capture_input=(tick==0||tick==2)?PRG32_BTN_START:(tick>=260?PRG32_BTN_A:0);grendizer_c_update();grendizer_c_draw();}
 // EDUCATIONAL: Require a live first-stage scene instead of accidentally saving a menu or terminal screen.
 assert(state==ST_PLAY&&stage==1&&lives>0);
 // EDUCATIONAL: Write a portable RGB image header at the native 320x200 viewport resolution.

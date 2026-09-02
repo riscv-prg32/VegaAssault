@@ -1,9 +1,9 @@
-# Gameplay Demo
+# Campaign Demo
 
-[Watch or download the gameplay demo (MP4, 761 KiB)](media/vega-assault-demo.mp4)
+[Watch or download the 30-second campaign montage](media/vega-assault-demo.mp4).
 
-The 15-second clip shows the title screen, first-stage introduction and combat with the original stereo soundtrack. It is encoded as H.264 video at 960×600 with stereo AAC audio.
+The H.264 960×600 video shows title, secret-base takeoff, Earth, sky, marine and underground combat, Special Cosmo assembly/launch, three lunar forms with NPC escorts, the Moon base boss and the animated destruction/escape ending. Audio is stereo AAC.
 
-The video runs the actual cartridge update/draw code using the PRG32 software renderer and scripted standard button input. Music events are synchronized to game ticks and rendered through the software stereo mixer model; sound effects are omitted. The capture does not alter game state or grant invulnerability. This is a native software capture, not a QEMU or ESP32-C6 recording.
+The video uses actual cartridge update/draw code with the upstream software renderer. The host harness explicitly selects scenes, grants temporary invulnerability, accelerates cinematic/form timing and stages the final boss hit to fit the campaign into 30 seconds. It is a native scene montage, not an uninterrupted playthrough or QEMU/ESP32-C6 recording. Original music events follow capture ticks and use the existing stereo software mixer; SFX are omitted.
 
-Game pixels are enlarged 3× without smoothing, with a short fade at the end. See [reproduction instructions](reproducibility.md#gameplay-video) and [soundtrack design](audio.md#opening-theme-refinement-2026-09-03-current).
+Pixels are enlarged 3× without smoothing. A 0.6-second fade closes the clip. Run `FFMPEG=/path/to/ffmpeg python3 tools/capture_video.py`, then copy `build/game-demo/vega-assault-demo.mp4` to `docs/media/`. The encoder trims 910 source ticks to exactly 30 seconds. `build/game-demo/capture.json` records timing and scene provenance.

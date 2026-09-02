@@ -1,6 +1,6 @@
 # Vega Assault
 
-An unofficial, non-commercial, educational PRG32 C fan-game inspired by the world of Go Nagai's *UFO Robot Grendizer*. The cartridge combines an arcade-style finite-state machine, animated RGB565 sprites, Grendizer/Spazer transformations, Screw Crusher, Double Harken and Space Thunder, multiple enemy families, three terrain stages, boss-specific patterns, and an original stereo chiptune/SFX system.
+An unofficial, non-commercial, educational PRG32 C fan-game inspired by the world of Go Nagai's *UFO Robot Grendizer*. The cartridge combines an arcade-style finite-state machine, animated RGB565 sprites, Grendizer/Spazer transformations, Screw Crusher, Double Harken and Space Thunder, multiple enemy families, five terrain stages, boss-specific patterns, and an original stereo chiptune/SFX system.
 
 This game is fan made with no business target, just a tribute.
 
@@ -10,19 +10,27 @@ All code, pixel art, waveforms, SFX, and musical patterns supplied by this repos
 
 *Actual ESP32-C3 QEMU gameplay capture, including the host display bands, enlarged 2× without smoothing. See [QEMU validation](docs/qemu.md#sprite-refinement-smoke-test-2026-09-02) and the [reproducible native capture](docs/graphics.md#gameplay-capture).*
 
-The refined sprites use inked silhouettes, shaded armor, articulated limbs and distinct boss profiles, with original geometry inspired by classic mecha drawing conventions. All 24 frame sizes and the 15,068-byte combined sprite/palette footprint are preserved. See the [sprite sheet](assets/sprite-sheet.png) and [graphics pipeline](docs/graphics.md).
+The refined sprites use inked silhouettes, shaded armor, articulated limbs and distinct boss profiles, with original geometry inspired by classic mecha drawing conventions. The 24-frame set occupies 15,260 bytes of sprite indices and palette data, including the new standalone Spazer. See the [sprite sheet](assets/sprite-sheet.png) and [graphics pipeline](docs/graphics.md).
 
-More actual gamefield captures—combat, pause and resume—are in the [screenshot gallery](docs/screenshots.md). The refreshed [Store icon](store/icon.png) and [splash artwork](store/splash.png) accompany the 1.2.0 bundle.
+More actual gamefield captures—combat, pause and resume—are in the [screenshot gallery](docs/screenshots.md). The refreshed [Store icon](store/icon.png) and [splash artwork](store/splash.png) are retained in the 1.4.0 bundle.
 
-[Watch the 15-second gameplay demo with stereo soundtrack](docs/media/vega-assault-demo.mp4) · [Capture details and reproduction](docs/demo.md).
+[Watch the 30-second gameplay demo with stereo soundtrack](docs/media/vega-assault-demo.mp4) · [Capture details and reproduction](docs/demo.md).
 
-The demo shows title, stage introduction and combat using the native game renderer with synchronized software-rendered stereo music. It contains no sound effects.
+The demo shows launch, all environments, Special Cosmo, lunar forms and the animated ending using the native renderer with synchronized software-rendered stereo music. It contains no sound effects.
 
 ## Educational purpose
 
 The repository is intentionally written as a teaching artifact. Every nonblank C source line is accompanied by an `EDUCATIONAL` comment. The implementation emphasizes explicit finite-state machines, static arrays, deterministic integer logic, the PRG32 ABI, RGB565 graphics, compact audio sequencing, reproducible asset generation, and a hard cartridge-size budget. See [docs/educational_design.md](docs/educational_design.md).
 
-The original soundtrack uses a dramatic minor-key opening, vocal-like repeated calls, sustained brass answers, galloping accompaniment and centered bass pickups. Unequal note lengths and baked-in instrumental attacks bring a stronger heroic opening-theme feel through newly authored melodies and synthesized waveforms. Moderate stereo separation preserves both parts in each speaker. Run `python3 tools/preview_music.py` for stereo/mono listening previews of all three stages. See [audio design and validation](docs/audio.md). This revision passed an ESP32-C3 QEMU mono-audio smoke test; physical ESP32-C6 and hardware stereo listening remain unverified.
+The original soundtrack uses a dramatic minor-key opening, vocal-like repeated calls, sustained brass answers, galloping accompaniment and centered bass pickups. Unequal note lengths and baked-in instrumental attacks bring a stronger heroic opening-theme feel through newly authored melodies and synthesized waveforms. Moderate stereo separation preserves both parts in each speaker. Run `python3 tools/preview_music.py` for stereo/mono listening previews of the three reused musical themes. See [audio design and validation](docs/audio.md). This revision passed an ESP32-C3 QEMU mono-audio smoke test; physical ESP32-C6 and hardware stereo listening remain unverified.
+
+## Expanded campaign
+
+Starting a run plays an animated mountain/waterfall secret-base takeoff. Earth Defense is followed by Double Spazer in open sky, Marine Spazer underwater, and Drill Spazer in a rocky underground tunnel. The three support craft then assemble into **Special Cosmo** and launch to the Moon.
+
+On the Moon, Grendizer automatically alternates every 120 combat ticks between standalone Spazer, Robot, and Spazer+Robot. Double, Marine and Drill Spazer are independent, invulnerable NPC escorts with staggered supporting fire. Destroying Vega's Moon base triggers an animated destruction-and-flight-home epilogue before victory.
+
+[View the rendered campaign scenes](assets/campaign-scenes.png). These are native renderer fixtures for visual inspection, not a recorded playthrough. Generate them with `python3 tools/capture_campaign.py`. The [30-second video](docs/media/vega-assault-demo.mp4) is a scripted campaign montage with selected scenes, protected combat and accelerated cinematic timing.
 
 ## Controls
 
@@ -102,12 +110,12 @@ The repository contains Store artwork, a manifest template, a bundle builder, an
 ./publish-store.sh
 ```
 
-The helper takes its default version from `store/manifest.template.json` (currently 1.2.0); `VERSION=...` overrides it. It uses the configured PRG32 tools to validate cartridge structure and ABI/memory requirements before creating a reproducible archive. Inspect `dist/`, then upload the generated ZIP to your CartridgeStore instance:
+The helper takes its default version from `store/manifest.template.json` (currently 1.4.0); `VERSION=...` overrides it. It uses the configured PRG32 tools to validate cartridge structure and ABI/memory requirements before creating a reproducible archive. Inspect `dist/`, then upload the generated ZIP to your CartridgeStore instance:
 
 ```sh
 curl -X POST https://YOUR-STORE/api/publish/bundle \
   -H "Authorization: Bearer $PRG32_STORE_TOKEN" \
-  -F bundle=@dist/grendizer-vega-assault-86-store-1.2.0.zip
+  -F bundle=@dist/grendizer-vega-assault-86-store-1.4.0.zip
 ```
 
 Uploads enter the Store editor-review queue. Full instructions, architecture labeling rules, and release checks are in [docs/cartridge_store.md](docs/cartridge_store.md) and [STORE_PUBLISHING.md](STORE_PUBLISHING.md).
@@ -138,7 +146,7 @@ Start with [docs/index.md](docs/index.md). The documentation covers architecture
 
 Run `sh tools/test_game.sh` for C99 gameplay regression tests with address and undefined-behavior sanitizers. The tests use the sibling PRG32 headers (or `PRG32_ROOT`) and mock portable input, graphics, and audio calls. They cover pause, terminal transitions, controls, weapons, all stage/boss transitions, deterministic restart, and enemy movement/firing fixes. Weapons require enough free slots for the entire attack before spending energy or starting cooldowns, and waves include all five enemy families. After building, run `python3 -m unittest discover -s tests -p 'test_*.py'` for audio validation and Store packaging regressions. See [docs/testing.md](docs/testing.md) for what still requires QEMU and hardware.
 
-Sprites are stored as one-byte palette indices and expanded into a fixed RGB565 buffer before drawing. This preserves the artwork and fits the portable builder's separate **32768-byte executable RAM limit**. The measured package is **26520 bytes**, with **29372 bytes** of code/data/BSS; see [SIZE_BUDGET.md](SIZE_BUDGET.md).
+Sprites are stored as one-byte palette indices and expanded into a fixed RGB565 buffer before drawing. This preserves the artwork and fits the portable builder's separate **32768-byte executable RAM limit**. The measured package is **30264 bytes**, with **31696 bytes** of code/data/BSS; see [SIZE_BUDGET.md](SIZE_BUDGET.md).
 
 ## Cartridge-size rule
 

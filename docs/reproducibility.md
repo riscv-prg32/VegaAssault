@@ -18,3 +18,5 @@ The 14.85-second clip shows title, stage introduction and combat at the host's 3
 The published demo is [available in the documentation](demo.md). To refresh it after capture and verification, copy `build/game-demo/vega-assault-demo.mp4` to `docs/media/vega-assault-demo.mp4`.
 
 Generated output is `build/game-demo/vega-assault-demo.mp4` (H.264/AAC, fast-start MP4). The same directory retains raw frames, note/state logs, a stereo WAV, generated annotated C and JSON capture metadata. These generated artifacts are ignored by Git. The delivered capture was fully decoded successfully, its title/combat frames visually inspected, and decoded AAC verified to have distinct left/right channels without clipping. The original game source and cartridge bytes were not changed for the video.
+
+The current video is a 30-second campaign montage with explicit scene fixtures, protected combat and accelerated cinematic/form timing. See `demo.md` for capture provenance; earlier input-only capture descriptions apply to the previous video.
