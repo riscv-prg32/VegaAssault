@@ -151,7 +151,7 @@ static void spawn_enemy(int slot,int kind,int x,int y){Enemy *e=&enemies[slot];e
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static int alive_enemies(void){int i,n=0;for(i=0;i<MAX_ENEMIES;i++)if(enemies[i].active)n++;return n;}
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
-static void fill_wave(void){int i,k;for(i=0;i<MAX_ENEMIES;i++){k=(i+stage+stage_kills/4)%5;if(k==4)k=0;spawn_enemy(i,k,16+(i%5)*60,28+(i/5)*28);} }
+static void fill_wave(void){int i,k;for(i=0;i<MAX_ENEMIES;i++){k=(i+stage+stage_kills/4)%5;spawn_enemy(i,k,16+(i%5)*60,28+(i/5)*28);} }
 
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void enemy_fire(int x,int y,int dx,int dy,int kind){int i;for(i=0;i<MAX_ESHOTS;i++)if(!eshots[i].active){eshots[i].x=x;eshots[i].y=y;eshots[i].dx=dx;eshots[i].dy=dy;eshots[i].kind=kind;eshots[i].active=1;return;}}
@@ -160,15 +160,59 @@ static void player_damage(void){if(invuln)return;lives--;invuln=75;combo=0;prg32
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void kill_enemy(Enemy *e){score+=120+e->kind*55+combo*10;if(combo<9)combo++;stage_kills++;if(energy<9)energy++;prg32_audio_play_sample_pan(SFX_BOOM,155,900,(int8_t)panx(e->x));e->active=0;}
 
+// EDUCATIONAL: Precondition: initialized shot pool; reads slots without mutation or ABI calls; O(MAX_SHOTS); returns free capacity before a weapon commits.
+static int free_shots(void){
+// EDUCATIONAL: Count unused entries in the fixed pool; no dynamic allocation occurs.
+int i,count=0;
+// EDUCATIONAL: Every inactive entry can hold exactly one projectile.
+for(i=0;i<MAX_SHOTS;i++)if(!shots[i].active)count++;
+// EDUCATIONAL: The single-threaded update guarantees this capacity until the caller inserts its shots.
+return count;
+// EDUCATIONAL: End the capacity query.
+}
+
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void shot_add(int kind,int x,int y,int dx,int dy,int damage,int life){int i;for(i=0;i<MAX_SHOTS;i++)if(!shots[i].active){shots[i].x=x;shots[i].y=y;shots[i].dx=dx;shots[i].dy=dy;shots[i].kind=kind;shots[i].damage=damage;shots[i].life=life;shots[i].active=1;return;}}
-// EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
-static void fire_screw(void){if(screw_cd)return;shot_add(W_SCREW,px+10,py-5,0,-7,1,35);screw_cd=6;prg32_audio_play_sample_pan(SFX_BLAST,175,1200,(int8_t)panx(px));}
-// EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
-static void fire_harken(void){if(harken_cd)return;shot_add(W_HARKEN,px+4,py+2,-2,-5,2,44);shot_add(W_HARKEN,px+16,py+2,2,-5,2,44);harken_cd=18;prg32_audio_play_sample_pan(SFX_HARKEN,190,900,(int8_t)panx(px));}
-// EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
-static void fire_thunder(void){if(thunder_cd||energy<3)return;energy-=3;shot_add(W_THUNDER,px+8,py-2,0,-9,4,26);shot_add(W_THUNDER,px+12,py-2,0,-9,4,26);thunder_cd=44;prg32_audio_play_sample_pan(SFX_THUNDER,230,520,0);}
-
+// EDUCATIONAL: Precondition: combat input phase; commits a complete attack only when capacity permits; O(MAX_SHOTS); changes shots/resources and plays portable SFX.
+static void fire_screw(void){
+// EDUCATIONAL: Reject the attack before side effects if its cooldown, energy or fixed-pool capacity forbids it.
+if(screw_cd||free_shots()<1)return;
+// EDUCATIONAL: Insert one projectile into a slot guaranteed by the capacity check.
+shot_add(W_SCREW,px+10,py-5,0,-7,1,35);
+// EDUCATIONAL: Charge the successful attack after all its projectiles exist.
+screw_cd=6;
+// EDUCATIONAL: Emit one mono-compatible firing sound, with spatial pan where appropriate.
+prg32_audio_play_sample_pan(SFX_BLAST,175,1200,(int8_t)panx(px));
+// EDUCATIONAL: End the all-or-nothing weapon action.
+}
+// EDUCATIONAL: Precondition: combat input phase; commits a complete attack only when capacity permits; O(MAX_SHOTS); changes shots/resources and plays portable SFX.
+static void fire_harken(void){
+// EDUCATIONAL: Reject the attack before side effects if its cooldown, energy or fixed-pool capacity forbids it.
+if(harken_cd||free_shots()<2)return;
+// EDUCATIONAL: Insert one projectile into a slot guaranteed by the capacity check.
+shot_add(W_HARKEN,px+4,py+2,-2,-5,2,44);
+// EDUCATIONAL: Insert one projectile into a slot guaranteed by the capacity check.
+shot_add(W_HARKEN,px+16,py+2,2,-5,2,44);
+// EDUCATIONAL: Charge the successful attack after all its projectiles exist.
+harken_cd=18;
+// EDUCATIONAL: Emit one mono-compatible firing sound, with spatial pan where appropriate.
+prg32_audio_play_sample_pan(SFX_HARKEN,190,900,(int8_t)panx(px));
+// EDUCATIONAL: End the all-or-nothing weapon action.
+}
+// EDUCATIONAL: Precondition: combat input phase; commits a complete attack only when capacity permits; O(MAX_SHOTS); changes shots/resources and plays portable SFX.
+static void fire_thunder(void){
+// EDUCATIONAL: Reject the attack before side effects if its cooldown, energy or fixed-pool capacity forbids it.
+if(thunder_cd||energy<3||free_shots()<2)return;
+// EDUCATIONAL: Insert one projectile into a slot guaranteed by the capacity check.
+shot_add(W_THUNDER,px+8,py-2,0,-9,4,26);
+// EDUCATIONAL: Insert one projectile into a slot guaranteed by the capacity check.
+shot_add(W_THUNDER,px+12,py-2,0,-9,4,26);
+// EDUCATIONAL: Charge the successful attack after all its projectiles exist.
+energy-=3;thunder_cd=44;
+// EDUCATIONAL: Emit one mono-compatible firing sound, with spatial pan where appropriate.
+prg32_audio_play_sample_pan(SFX_THUNDER,230,520,0);
+// EDUCATIONAL: End the all-or-nothing weapon action.
+}
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void begin_transform(void){timer=0;state=ST_TRANSFORM;clear_entities();prg32_audio_play_sample_pan(SFX_DOCK,180,760,0);}
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
@@ -184,7 +228,7 @@ static void update_shots(void){int i,j;for(i=0;i<MAX_SHOTS;i++){Shot *s=&shots[i
 static void update_eshots(void){int i;for(i=0;i<MAX_ESHOTS;i++){EShot *s=&eshots[i];if(!s->active)continue;s->x+=s->dx;s->y+=s->dy;if(s->kind==2&&((frame>>3)&1))s->x+=s->dx>=0?1:-1;if(s->x<-8||s->x>328||s->y>200){s->active=0;continue;}if(hit(s->x,s->y,4,6,px+4,py+3,16,19)){s->active=0;player_damage();if(state==ST_OVER)return;}}}
 
 // EDUCATIONAL: Precondition: ST_PLAY; moves and fires enemies at integer tick periods; O(MAX_ENEMIES*MAX_ESHOTS); fatal escape damage stops wave progression and may emit portable audio.
-static void update_enemies(void){int i;for(i=0;i<MAX_ENEMIES;i++){Enemy *e=&enemies[i];if(!e->active)continue;e->phase++;e->anim=(frame>>3)&1;switch(e->kind){case 0:e->x+=e->dx*2;if(e->x<8||e->x>296)e->dx=-e->dx;if((e->phase&63)==0)enemy_fire(e->x+7,e->y+12,0,3,0);break;case 1:e->y+=1;if((e->phase&31)==0)e->x+=e->dx*10;if((e->phase%80)==0)enemy_fire(e->x+7,e->y+12,e->dx,3,1);break;case 2:e->x+=e->dx;if(e->x<8||e->x>296)e->dx=-e->dx;if((e->phase&15)==0)e->y+=2;if((e->phase%96)==0){enemy_fire(e->x+6,e->y+10,-1,3,2);enemy_fire(e->x+10,e->y+10,1,3,2);}break;case 3:e->x+=e->dx*2;if(e->x<6||e->x>298)e->dx=-e->dx;if((e->phase%48)==0){enemy_fire(e->x+4,e->y+10,-1,4,0);enemy_fire(e->x+12,e->y+10,1,4,0);}break;default:e->y++;break;}if(e->y>150){e->active=0;player_damage();if(state==ST_OVER)return;}}if(alive_enemies()==0){if(stage_kills>=18){begin_boss();}else fill_wave();}}
+static void update_enemies(void){int i;for(i=0;i<MAX_ENEMIES;i++){Enemy *e=&enemies[i];if(!e->active)continue;e->phase++;e->anim=(frame>>3)&1;switch(e->kind){case 0:e->x+=e->dx*2;if(e->x<8||e->x>296)e->dx=-e->dx;if((e->phase&63)==0)enemy_fire(e->x+7,e->y+12,0,3,0);break;case 1:e->y+=1;if((e->phase&31)==0)e->x+=e->dx*10;if(e->x<8){e->x=8;e->dx=1;}if(e->x>296){e->x=296;e->dx=-1;}if((e->phase%80)==0)enemy_fire(e->x+7,e->y+12,e->dx,3,1);break;case 2:e->x+=e->dx;if(e->x<8||e->x>296)e->dx=-e->dx;if((e->phase&15)==0)e->y+=2;if((e->phase%96)==0){enemy_fire(e->x+6,e->y+10,-1,3,2);enemy_fire(e->x+10,e->y+10,1,3,2);}break;case 3:e->x+=e->dx*2;if(e->x<6||e->x>298)e->dx=-e->dx;if((e->phase%48)==0){enemy_fire(e->x+4,e->y+10,-1,4,0);enemy_fire(e->x+12,e->y+10,1,4,0);}break;case 4:if((e->phase&7)==0)e->y++;if((e->phase&63)==0)enemy_fire(e->x+7,e->y+12,px>e->x?1:-1,3,1);break;default:e->y++;break;}if(e->y>150){e->active=0;player_damage();if(state==ST_OVER)return;}}if(alive_enemies()==0){if(stage_kills>=18){begin_boss();}else fill_wave();}}
 
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void boss_fire_pattern(void){int d;if(stage==1){enemy_fire(boss_x+24,boss_y+18,0,4,0);if((boss_phase&1)==0){enemy_fire(boss_x+8,boss_y+16,-1,3,1);enemy_fire(boss_x+40,boss_y+16,1,3,1);}}

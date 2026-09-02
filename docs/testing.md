@@ -13,9 +13,15 @@ Regression cases cover attract/title input, stage introduction and transformatio
 ## Observed local results (2026-09-02)
 
 - Host regression suite and educational checker passed.
-- Portable RV32 build passed: 26192-byte package; 29044-byte code/data/BSS requirement.
+- Portable RV32 build passed: 26368-byte package; 29220-byte code/data/BSS requirement.
 - All 24 palette-decoded sprite arrays and preview pixels matched the original RGB565 artwork.
 - Packed audio matched the current upstream audio packer's output byte for byte.
 - Generated Store ZIP passed CRC checks; its manifest and cartridge parsed with current PRG32 tooling and the bundled cartridge matched the build output.
 
-No QEMU binary was found on PATH or in the local Espressif tools, and no ESP32 serial device was visible. The available sibling host configuration targets ESP32-C6, not the separate ESP32-C3 QEMU host. QEMU execution, physical-board playthroughs, frame timing, stereo listening and mono downmix checks were not performed. ABI mocks and audio-byte comparisons cannot establish those results; the release matrix above remains required before release.
+ESP-IDF 5.4 successfully loaded from `/Users/raffaelemontella/esp-idf/export.sh`, and the cartridge built against `/Users/raffaelemontella/devel/riscv-prg32/PRG32`. No QEMU binary was found after export or in the local Espressif tools, and no ESP32 serial device was visible. The available sibling host configuration targets ESP32-C6, not the separate ESP32-C3 QEMU host. QEMU execution, physical-board playthroughs, frame timing, stereo listening and mono downmix checks were not performed. ABI mocks and audio-byte comparisons cannot establish those results; the release matrix above remains required before release.
+
+## Second review regression checks
+
+The added full-pool weapon test failed on the previous implementation: attacks still consumed energy/cooldowns without adding shots. It now passes under sanitizers, together with tests for a single free slot, two nonadjacent free slots, no SFX on rejection, all five enemy families, gunner firing, and blade boundary recovery.
+
+After building, run `python3 -m unittest discover -s tests -p 'test_*.py'`. Five integration tests cover default/explicit versions, both target labels, cartridge byte preservation, deterministic ZIP bytes after changing source timestamps, checksum verification, rejection of malformed/truncated/oversized cartridges, preservation of existing bundles on validation failure, and protection against overwriting input cartridges. They use a temporary directory and the real built cartridge. Passing both target-label checks does not imply either host was executed.

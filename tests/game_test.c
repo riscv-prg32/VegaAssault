@@ -7,7 +7,7 @@
 // EDUCATIONAL: Mock input and count portable audio/draw effects without requiring firmware.
 static uint32_t test_input;
 // EDUCATIONAL: Record music events and boss draws for pause verification.
-static int audio_events, boss_draws;
+static int audio_events, boss_draws, sample_events;
 // EDUCATIONAL: Precondition: host test sets input; no state change; O(1); replaces portable input read.
 uint32_t prg32_input_read(void){return test_input;}
 // EDUCATIONAL: Precondition: valid voice parameters; records one effect; O(1); mocks portable note-on.
@@ -15,7 +15,7 @@ void prg32_audio_note_on(uint8_t c,uint8_t i,uint8_t n,uint8_t v){(void)c;(void)
 // EDUCATIONAL: Precondition: valid channel; records one effect; O(1); mocks portable note-off.
 void prg32_audio_note_off(uint8_t c){(void)c;audio_events++;}
 // EDUCATIONAL: Precondition: sample arguments from game; no sound output; O(1); mocks panned sample playback.
-int prg32_audio_play_sample_pan(uint16_t s,uint8_t v,uint16_t p,int8_t pan){(void)s;(void)v;(void)p;(void)pan;return 0;}
+int prg32_audio_play_sample_pan(uint16_t s,uint8_t v,uint16_t p,int8_t pan){(void)s;(void)v;(void)p;assert(pan>=-64&&pan<=63);sample_events++;return 0;}
 // EDUCATIONAL: Precondition: RGB565 color; no framebuffer effect; O(1); mocks portable clear.
 void prg32_gfx_clear(uint16_t c){(void)c;}
 // EDUCATIONAL: Precondition: integer rectangle and color; no framebuffer effect; O(1); mocks portable rectangle.
@@ -72,6 +72,18 @@ reset();px=3;py=116;update_play_input(PRG32_BTN_LEFT|PRG32_BTN_UP|PRG32_BTN_A);a
 for(i=1;i<=3;i++){reset();stage=i;begin_boss();boss_hp=1;shot_add(W_SCREW,boss_x,boss_y+7,0,-7,1,35);grendizer_c_update();assert(state==(i==3?ST_WIN:ST_STAGE_INTRO));}
 // EDUCATIONAL: Both terminal screens recover to title on a fresh START press.
 state=ST_OVER;old_input=0;test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_TITLE);state=ST_WIN;old_input=0;grendizer_c_update();assert(state==ST_TITLE);
+// EDUCATIONAL: A full shot pool must reject all weapons without charging resources or emitting a firing sound.
+reset();for(i=0;i<MAX_SHOTS;i++)shots[i].active=1;events=sample_events;fire_screw();fire_harken();fire_thunder();assert(energy==5&&screw_cd==0&&harken_cd==0&&thunder_cd==0&&sample_events==events);
+// EDUCATIONAL: One free slot cannot fit a paired attack; it must remain available with energy unchanged.
+shots[4].active=0;fire_harken();fire_thunder();assert(!shots[4].active&&energy==5&&harken_cd==0&&thunder_cd==0&&sample_events==events);
+// EDUCATIONAL: Two nonadjacent slots accept both Thunder projectiles and charge exactly once.
+shots[9].active=0;fire_thunder();assert(shots[4].active&&shots[9].active&&shots[4].kind==W_THUNDER&&shots[9].kind==W_THUNDER&&energy==2&&thunder_cd==44&&sample_events==events+1);
+// EDUCATIONAL: Every wave must include the saucer and all four robot families shown by the attract screen.
+reset();r=0;for(i=0;i<MAX_ENEMIES;i++)r|=1<<enemies[i].kind;assert(r==31);
+// EDUCATIONAL: A gunner fires at its scheduled tick while remaining in the enemy playfield.
+clear_entities();spawn_enemy(0,4,40,30);enemies[0].phase=63;update_enemies();assert(eshots[0].active&&eshots[0].dy>0);
+// EDUCATIONAL: A blade at the edge must turn inward instead of drifting outside the viewport.
+clear_entities();spawn_enemy(0,1,8,30);enemies[0].dx=-1;enemies[0].phase=31;update_enemies();assert(enemies[0].x>=8&&enemies[0].dx==1);
 // EDUCATIONAL: Report successful regression checks to the test runner.
 puts("Gameplay regression tests: PASS");return 0;
 // EDUCATIONAL: End the host regression entry point.

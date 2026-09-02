@@ -38,7 +38,7 @@ Create a Bearer token from the Store, then:
 ```sh
 curl -X POST https://STORE/api/publish/bundle \
   -H "Authorization: Bearer prg32_..." \
-  -F bundle=@dist/grendizer-vega-assault-86-store-1.0.0.zip
+  -F bundle=@dist/grendizer-vega-assault-86-store-1.1.0.zip
 ```
 
 The upload enters the pending review queue. An editor must verify it before it appears in the public catalog.

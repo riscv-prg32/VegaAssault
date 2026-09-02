@@ -4,6 +4,10 @@ An unofficial, non-commercial, educational PRG32 C fan-game inspired by the worl
 
 All code, pixel art, waveforms, SFX, and musical patterns supplied by this repository are original project material. No anime frames, manga scans, production logos, commercial-game sprites, soundtrack recordings, or note-for-note transcriptions are included. Third-party names, characters, designs, and trademarks remain the property of their respective rights holders.
 
+![Vega Assault gameplay: Grendizer firing Screw Crusher at a first-stage enemy wave](assets/gameplay.png)
+
+*Actual gameplay rendered from the cartridge's C update/draw functions with PRG32's software renderer. Host capture of the 320×200 viewport, enlarged 3× without smoothing; see [capture instructions](docs/graphics.md#gameplay-capture).*
+
 ## Educational purpose
 
 The repository is intentionally written as a teaching artifact. Every nonblank C source line is accompanied by an `EDUCATIONAL` comment. The implementation emphasizes explicit finite-state machines, static arrays, deterministic integer logic, the PRG32 ABI, RGB565 graphics, compact audio sequencing, reproducible asset generation, and a hard cartridge-size budget. See [docs/educational_design.md](docs/educational_design.md).
@@ -36,7 +40,7 @@ From this repository:
 PRG32_ROOT=/absolute/path/to/PRG32 ./build.sh
 ```
 
-The script checks educational comments, compiles C99 with `-Wall -Wextra -Werror`, repacks audio, invokes the PRG32 portable cartridge builder, and rejects any final package larger than **131072 bytes**. Export the ESP-IDF toolchain first so `riscv32-esp-elf-gcc` is on PATH. Sprite changes require `python3 tools/generate_assets.py` (Pillow required) before building. The script can be invoked from another directory; relative `OUT` paths are resolved against this repository, and absolute paths are supported. The cartridge exports `grendizer_c_init`, `grendizer_c_update`, and `grendizer_c_draw`.
+The script checks educational comments, compiles C99 with `-Wall -Wextra -Werror`, repacks audio, invokes the PRG32 portable cartridge builder, and rejects any final package larger than **131072 bytes**. Export the ESP-IDF toolchain first so `riscv32-esp-elf-gcc` is on PATH. In the configured local workspace, initialize the toolchain with `source /Users/raffaelemontella/esp-idf/export.sh` and use `PRG32_ROOT=/Users/raffaelemontella/devel/riscv-prg32/PRG32`. Sprite changes require `python3 tools/generate_assets.py` (Pillow required) before building. The script can be invoked from another directory; relative `OUT` paths are resolved against this repository, and absolute paths are supported. The cartridge exports `grendizer_c_init`, `grendizer_c_update`, and `grendizer_c_draw`.
 
 ## Step-by-step: run on QEMU
 
@@ -86,12 +90,12 @@ The repository contains Store artwork, a manifest template, a bundle builder, an
 ./publish-store.sh
 ```
 
-Inspect `dist/`, then upload the generated ZIP to your CartridgeStore instance:
+The helper takes its default version from `store/manifest.template.json` (currently 1.1.0); `VERSION=...` overrides it. It uses the configured PRG32 tools to validate cartridge structure and ABI/memory requirements before creating a reproducible archive. Inspect `dist/`, then upload the generated ZIP to your CartridgeStore instance:
 
 ```sh
 curl -X POST https://YOUR-STORE/api/publish/bundle \
   -H "Authorization: Bearer $PRG32_STORE_TOKEN" \
-  -F bundle=@dist/grendizer-vega-assault-86-store-1.0.0.zip
+  -F bundle=@dist/grendizer-vega-assault-86-store-1.1.0.zip
 ```
 
 Uploads enter the Store editor-review queue. Full instructions, architecture labeling rules, and release checks are in [docs/cartridge_store.md](docs/cartridge_store.md) and [STORE_PUBLISHING.md](STORE_PUBLISHING.md).
@@ -120,9 +124,9 @@ Start with [docs/index.md](docs/index.md). The documentation covers architecture
 
 ## Local verification
 
-Run `sh tools/test_game.sh` for C99 gameplay regression tests with address and undefined-behavior sanitizers. The tests use the sibling PRG32 headers (or `PRG32_ROOT`) and mock portable input, graphics, and audio calls. They cover pause, terminal transitions, controls, weapons, all stage/boss transitions, deterministic restart, and enemy movement/firing fixes. See [docs/testing.md](docs/testing.md) for what still requires QEMU and hardware.
+Run `sh tools/test_game.sh` for C99 gameplay regression tests with address and undefined-behavior sanitizers. The tests use the sibling PRG32 headers (or `PRG32_ROOT`) and mock portable input, graphics, and audio calls. They cover pause, terminal transitions, controls, weapons, all stage/boss transitions, deterministic restart, and enemy movement/firing fixes. Weapons require enough free slots for the entire attack before spending energy or starting cooldowns, and waves include all five enemy families. After building, run `python3 -m unittest discover -s tests -p 'test_*.py'` for Store packaging regressions. See [docs/testing.md](docs/testing.md) for what still requires QEMU and hardware.
 
-Sprites are stored as one-byte palette indices and expanded into a fixed RGB565 buffer before drawing. This preserves the artwork and fits the portable builder's separate **32768-byte executable RAM limit**. The measured package is **26192 bytes**, with **29044 bytes** of code/data/BSS; see [SIZE_BUDGET.md](SIZE_BUDGET.md).
+Sprites are stored as one-byte palette indices and expanded into a fixed RGB565 buffer before drawing. This preserves the artwork and fits the portable builder's separate **32768-byte executable RAM limit**. The measured package is **26368 bytes**, with **29220 bytes** of code/data/BSS; see [SIZE_BUDGET.md](SIZE_BUDGET.md).
 
 ## Cartridge-size rule
 

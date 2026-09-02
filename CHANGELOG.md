@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Make fixed-pool weapon attacks atomic: no partial pairs or resource charges when slots are unavailable.
+- Restore the gunner to waves with a firing pattern and constrain blade movement to the viewport.
+- Validate cartridge structure and runtime contracts before Store bundling; use the manifest version and deterministic ZIP metadata.
+- Add sanitizer and packaging regression coverage; verify the build through the configured ESP-IDF 5.4 environment.
+
 ## 1.0.0 - 2026-09-02
 
 - Store-ready release packaging for `prg32-metadata-1.0`.
