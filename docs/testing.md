@@ -70,3 +70,7 @@ The first QEMU pass exposed a load-access fault on entering the Earth introducti
 ## Special Cosmo revision (2026-09-03)
 
 Host sanitizer tests cover the full 240-tick Cosmo and ending boundaries, ignored action input during the ending, Drill-to-Cosmo transition, direct Moon-introduction-to-play transition, escort projectile creation without energy cost, and paused lunar form timing. RV32 C99 warnings-as-errors and absolute-relocation inspection pass. The final cartridge is 30264 bytes, with 31696 executable bytes and 2284 audio bytes. Physical ESP32-C6 and an input-only full campaign playthrough remain unverified. Video scene selection and QEMU scene fixtures are explicitly separate from playthrough evidence.
+
+## Manual transformation revision
+
+The sanitizer suite checks every stage's DOWN+A / UP+A behavior, held-chord idempotence, consumed movement/fire, both speed axes, damage for all weapons, detached NPC rendering/fire, recombination, A+B precedence, pause and full-pool safety. The portable release measures 30412 bytes with 31844 executable bytes. The video is 30 seconds with one independent continuous soundtrack; its sequencer event grid is asserted across scene boundaries. Physical ESP32-C6 testing remains unavailable.

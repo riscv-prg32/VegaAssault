@@ -2,9 +2,9 @@
   "abi": "prg32-metadata-1.0",
   "id": "org.riscv-prg32.grendizer-vega-assault-86",
   "title": "Vega Assault",
-  "version": "1.4.0",
-  "summary": "Five mecha missions with Special Cosmo assembly, lunar transformations, NPC Spazer support and an animated escape finale.",
-  "description": "Launch from a hidden base and defend Earth. Fly Double Spazer in the sky, Marine Spazer underwater and Drill Spazer underground. Assemble Special Cosmo and launch to the Moon, where Grendizer cycles between Spazer, Robot and combined forms with three NPC escorts. Destroy the Vega Moon base and watch the animated flight home. Original pixel art and stereo chiptune/SFX. Unofficial non-commercial educational fan work; no ripped artwork or recordings.",
+  "version": "1.5.0",
+  "summary": "Manually transform between fast Spazer flight and powerful Robot combat across five missions, with detached NPC support.",
+  "description": "Launch from a hidden base and defend Earth. Fly Double Spazer in the sky, Marine Spazer underwater and Drill Spazer underground. Assemble Special Cosmo and launch to the Moon, where Grendizer switches between Robot and combined forms with DOWN+A / UP+A. Combined flight is faster, Robot weapons are stronger, and detached craft provide NPC support alongside the three lunar escorts. Destroy the Vega Moon base and watch the animated flight home. Original pixel art and stereo chiptune/SFX. Unofficial non-commercial educational fan work; no ripped artwork or recordings.",
   "authors": [
     "PRG32 Grendizer fan-game contributors"
   ],

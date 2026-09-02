@@ -101,11 +101,11 @@ grendizer_c_init();test_input=PRG32_BTN_START;grendizer_c_update();assert(state=
 // EDUCATIONAL: Each stage introduction and docking sequence completes within its documented tick budget.
 test_input=0;for(i=0;i<179;i++){grendizer_c_update();assert(state==ST_LAUNCH);}grendizer_c_update();assert(state==ST_STAGE_INTRO);for(i=0;i<76;i++)grendizer_c_update();assert(state==ST_PLAY);stage=2;start_stage_intro();for(i=0;i<76;i++)grendizer_c_update();assert(state==ST_TRANSFORM);for(i=0;i<121;i++)grendizer_c_update();assert(state==ST_PLAY&&spazer_mode);
 // EDUCATIONAL: Clamp movement to the playfield and verify each standard weapon maps to its input.
-reset();px=3;py=116;update_play_input(PRG32_BTN_LEFT|PRG32_BTN_UP|PRG32_BTN_A);assert(px==3&&py==116&&shots[0].kind==W_SCREW);clear_entities();update_play_input(PRG32_BTN_B);assert(shots[0].kind==W_HARKEN&&shots[1].kind==W_HARKEN);clear_entities();energy=5;update_play_input(PRG32_BTN_A|PRG32_BTN_B);assert(energy==2&&shots[0].kind==W_THUNDER&&shots[1].kind==W_THUNDER);
+reset();px=3;py=116;update_play_input(PRG32_BTN_LEFT|PRG32_BTN_UP);assert(px==3&&py==116);update_play_input(PRG32_BTN_A);assert(shots[0].kind==W_SCREW);clear_entities();update_play_input(PRG32_BTN_B);assert(shots[0].kind==W_HARKEN&&shots[1].kind==W_HARKEN);clear_entities();energy=5;update_play_input(PRG32_BTN_A|PRG32_BTN_B);assert(energy==2&&shots[0].kind==W_THUNDER&&shots[1].kind==W_THUNDER);
 // EDUCATIONAL: Every boss advances to the following stage or victory through a real projectile collision.
 for(i=1;i<=STAGE_COUNT;i++){reset();stage=i;begin_boss();boss_hp=1;shot_add(W_SCREW,boss_x,boss_y+7,0,-7,1,35);grendizer_c_update();assert(state==(i==STAGE_COUNT?ST_ENDING:i==4?ST_COSMO:ST_STAGE_INTRO));}
 // EDUCATIONAL: Each support mission selects its own craft, reaches combat and safely renders a paused boss.
-for(i=2;i<=STAGE_COUNT;i++){reset();stage=i;start_stage_intro();assert(spazer_mode==i-1);for(t=0;t<76;t++)grendizer_c_update();assert(state==(i==5?ST_PLAY:ST_TRANSFORM));grendizer_c_draw();if(i<5)for(t=0;t<121;t++)grendizer_c_update();assert(state==ST_PLAY);grendizer_c_draw();begin_boss();for(t=0;t<448;t++){music_update();update_boss();}assert(boss_y>=24&&boss_y<=80);if(i==5)assert(boss_x==136&&boss_y==32);previous_state=ST_BOSS;state=ST_PAUSE;grendizer_c_draw();}
+for(i=2;i<=STAGE_COUNT;i++){reset();stage=i;start_stage_intro();assert(spazer_mode==1);for(t=0;t<76;t++)grendizer_c_update();assert(state==(i==5?ST_PLAY:ST_TRANSFORM));grendizer_c_draw();if(i<5)for(t=0;t<121;t++)grendizer_c_update();assert(state==ST_PLAY);grendizer_c_draw();begin_boss();for(t=0;t<448;t++){music_update();update_boss();}assert(boss_y>=24&&boss_y<=80);if(i==5)assert(boss_x==136&&boss_y==32);previous_state=ST_BOSS;state=ST_PAUSE;grendizer_c_draw();}
 // EDUCATIONAL: Distinct immutable vehicle frames ensure every supporting craft remains reachable.
 stage=2;assert(support_sprite()==double_spazer);stage=3;assert(support_sprite()==marine_spazer);stage=4;assert(support_sprite()==drill_spazer);stage=5;assert(support_sprite()==all_spazers);
 // EDUCATIONAL: Special Cosmo blocks combat until all 240 assembly/launch ticks have elapsed.
@@ -116,6 +116,24 @@ next_stage();assert(state==ST_ENDING);test_input=PRG32_BTN_A;for(i=0;i<239;i++){
 reset();stage=5;stage_scroll=0;clear_entities();energy=5;grendizer_c_update();assert(shots[0].active&&shots[0].damage==1&&energy==5);stage_scroll=600;test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_PAUSE);test_input=0;for(i=0;i<121;i++)grendizer_c_update();assert(stage_scroll==600);grendizer_c_draw();
 // EDUCATIONAL: Player damage blinking must never hide the three independent lunar NPC escorts.
 reset();stage=5;clear_entities();invuln=4;sprite_draws=0;grendizer_c_draw();assert(sprite_draws==3);invuln=0;sprite_draws=0;grendizer_c_draw();assert(sprite_draws==4);
+// EDUCATIONAL: Every stage permits reversible manual forms with stable speed, weapon power and detached-NPC behavior.
+for(i=1;i<=STAGE_COUNT;i++){
+// EDUCATIONAL: Each stage starts combined and moves four pixels horizontally and three vertically.
+reset();stage=i;start_stage_intro();begin_play();clear_entities();px=100;py=140;update_play_input(PRG32_BTN_RIGHT|PRG32_BTN_UP);assert(px==104&&py==137&&spazer_mode==1);
+// EDUCATIONAL: DOWN+A consumes the chord, changes form once and leaves energy, shots and position untouched.
+events=sample_events;update_play_input(PRG32_BTN_DOWN|PRG32_BTN_A);assert(spazer_mode==0&&px==104&&py==137&&free_shots()==MAX_SHOTS&&energy==5&&sample_events==events+1);update_play_input(PRG32_BTN_DOWN|PRG32_BTN_A);assert(sample_events==events+1);
+// EDUCATIONAL: Robot motion is slower on both axes, and all three weapons have doubled damage.
+update_play_input(PRG32_BTN_RIGHT|PRG32_BTN_UP);assert(px==106&&py==136);fire_screw();assert(shots[0].damage==2);clear_entities();fire_harken();assert(shots[0].damage==4&&shots[1].damage==4);clear_entities();fire_thunder();assert(shots[0].damage==8&&shots[1].damage==8);
+// EDUCATIONAL: Detached support is visible even while the player blinks and fires a weak energy-free NPC shot.
+clear_entities();invuln=4;sprite_draws=0;grendizer_c_draw();assert(sprite_draws==(i==5?4:1));frame=44;stage_scroll=1;energy=5;test_input=0;grendizer_c_update();assert(shots[0].active&&shots[0].damage==1&&energy==5);
+// EDUCATIONAL: UP+A reconnects, removes detached support and restores lower damage without resetting cooldowns.
+clear_entities();screw_cd=harken_cd=thunder_cd=0;update_play_input(PRG32_BTN_UP|PRG32_BTN_A);assert(spazer_mode==1&&free_shots()==MAX_SHOTS);fire_screw();assert(shots[0].damage==1);clear_entities();fire_harken();assert(shots[0].damage==2);clear_entities();fire_thunder();assert(shots[0].damage==4);
+// EDUCATIONAL: Thunder retains priority for A+B with a vertical direction; it does not change form.
+clear_entities();energy=5;thunder_cd=0;update_play_input(PRG32_BTN_A|PRG32_BTN_B|PRG32_BTN_DOWN);assert(spazer_mode==1&&energy==2&&shots[0].kind==W_THUNDER);
+// EDUCATIONAL: Finish per-stage form checks.
+}
+// EDUCATIONAL: Pause ignores transform chords, and a full pool safely omits detached support shots.
+reset();state=ST_PAUSE;previous_state=ST_PLAY;test_input=PRG32_BTN_DOWN|PRG32_BTN_A;grendizer_c_update();assert(spazer_mode==1);state=ST_PLAY;spazer_mode=0;frame=44;test_input=0;for(i=0;i<MAX_SHOTS;i++)shot_add(W_SCREW,100,150,0,0,1,100);energy=5;grendizer_c_update();assert(energy==5&&free_shots()==0);
 // EDUCATIONAL: Both terminal screens recover to title on a fresh START press.
 state=ST_OVER;old_input=0;test_input=PRG32_BTN_START;grendizer_c_update();assert(state==ST_TITLE);state=ST_WIN;old_input=0;grendizer_c_update();assert(state==ST_TITLE);
 // EDUCATIONAL: A full shot pool must reject all weapons without charging resources or emitting a firing sound.

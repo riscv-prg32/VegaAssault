@@ -46,3 +46,7 @@ The composition uses broad opening-theme conventions without importing a Grendiz
 ## Five-mission reuse
 
 The expanded campaign maps stages 1–5 to musical themes 1, 2, 3, 1, 2. Both melody and harmony use `(stage-1)%3`, preserving bounds and musical alignment. No samples, pans, voice counts or weapon sounds changed. Full phrase timing/replay is exercised for all five stages under sanitizers; stereo/mono software previews still pass without clipping.
+
+## Continuous video soundtrack
+
+The 30-second montage now renders one separate, uninterrupted 910-tick stage-one music performance. Visual scene selection cannot call this performance's reset routine or change its theme; only its initial reset and natural phrase progression occur. The final mux trims to 30 seconds and fades the last 0.6 seconds. The game itself retains stage-specific music and normal pause/game-over behavior. `continuous-music.log` records note events; a capture assertion checks their uninterrupted seven-tick cadence.

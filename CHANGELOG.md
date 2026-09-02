@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.0 — Manual transformation and continuous demo music
+
+- Add DOWN+A Robot / UP+A combined form in every combat stage.
+- Give combined flight greater speed and Robot weapons double damage.
+- Turn each detached Spazer into an independent firing NPC.
+- Replace automatic lunar cycling with manual selection.
+- Revise the 30-second video with one uninterrupted soundtrack across scene cuts.
+
 ## 1.4.0 — Special Cosmo and lunar escort finale
 
 - Animate three-craft assembly, Moon launch, base destruction and flight home.

@@ -33,8 +33,10 @@ def main():
                             'fprintf(stderr,"%d %u %u %u %u\\n",video_tick,c,i,n,v);')
     source = source.replace('(void)c;', 'fprintf(stderr,"%d %u 0 0 0\\n",video_tick,c);')
     source += '''
-int main(void){
+int main(int argc,char **argv){
+(void)argv;
 grendizer_c_init();
+if(argc>1){state=ST_PLAY;stage=1;music_reset();for(video_tick=0;video_tick<910;video_tick++)music_update();return 0;}
 for(video_tick=0;video_tick<910;video_tick++){
 int target=px,nearest=-1;
 capture_input=0;
@@ -46,7 +48,7 @@ start_stage_intro();begin_play();invuln=1001;
 }
 if(video_tick==450){stage=4;next_stage();}
 if(video_tick>=450&&video_tick<600)timer=(video_tick-450)*240/150;
-if(video_tick>=600&&video_tick<810)stage_scroll=(video_tick-600)*10;
+
 if(video_tick==750)begin_boss();
 if(video_tick==809){boss_hp=1;shot_add(W_SCREW,boss_x,boss_y+7,0,-7,1,35);}
 if(video_tick==810)assert(state==ST_ENDING);
@@ -61,6 +63,8 @@ if(enemies[i].active&&enemies[i].y>nearest){nearest=enemies[i].y;target=enemies[
 if(target>px+3)capture_input|=PRG32_BTN_RIGHT;
 if(target<px-3)capture_input|=PRG32_BTN_LEFT;
 if((video_tick%180)<12&&energy>=3)capture_input|=PRG32_BTN_B;
+if(video_tick==230||video_tick==290||video_tick==350||video_tick==410||video_tick==650)capture_input=PRG32_BTN_DOWN|PRG32_BTN_A;
+if(video_tick==255||video_tick==315||video_tick==375||video_tick==435||video_tick==720)capture_input=PRG32_BTN_UP|PRG32_BTN_A;
 }
 grendizer_c_update();grendizer_c_draw();
 assert(state!=ST_OVER);
@@ -89,7 +93,13 @@ return ferror(stdout)?1:0;
         subprocess.run([str(executable)], stdout=frames, stderr=log, check=True)
     assert raw.stat().st_size == TICKS * 320 * 200 * 3
     lines = (output / 'events.log').read_text().splitlines()
-    note_events = [list(map(int, line.split())) for line in lines if not line.startswith('STATE')]
+    # Perform one uninterrupted musical take, independently of scene resets/cuts.
+    music_log = output / 'continuous-music.log'
+    with music_log.open('w') as log:
+        subprocess.run([str(executable), '--soundtrack'], stdout=subprocess.DEVNULL, stderr=log, check=True)
+    note_events = [list(map(int, line.split())) for line in music_log.read_text().splitlines()]
+    assert max(event[0] for event in note_events) >= TICKS-7
+    assert all(event[0] == 0 or event[0] % 7 == 6 for event in note_events), "Soundtrack clock must never reset at a scene cut"
     states = [line for line in lines if line.startswith('STATE')]
     print('\n'.join(states), flush=True)
     stereo, _ = render(note_events, TICKS)
@@ -112,8 +122,8 @@ return ferror(stdout)?1:0;
                     '-t', '30', str(video)], check=True)
     (output / 'capture.json').write_text(json.dumps({
         'duration_seconds': 30, 'ticks': TICKS, 'size': [960, 600],
-        'capture': 'native campaign montage with explicit scene fixtures and accelerated cinematic/form timing',
-        'audio': 'synchronized C note events, software stereo mixer model, no SFX',
+        'capture': 'native campaign montage with explicit scene fixtures and accelerated cinematic timing and scripted manual transformations',
+        'audio': 'one uninterrupted stage-one C sequencer performance; independent of scene cuts, software stereo mixer, no SFX',
         'stereo_pcm_peak': peak, 'states': states,
     }, indent=2) + '\n')
     print(video)

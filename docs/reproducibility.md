@@ -19,4 +19,6 @@ The published demo is [available in the documentation](demo.md). To refresh it a
 
 Generated output is `build/game-demo/vega-assault-demo.mp4` (H.264/AAC, fast-start MP4). The same directory retains raw frames, note/state logs, a stereo WAV, generated annotated C and JSON capture metadata. These generated artifacts are ignored by Git. The delivered capture was fully decoded successfully, its title/combat frames visually inspected, and decoded AAC verified to have distinct left/right channels without clipping. The original game source and cartridge bytes were not changed for the video.
 
-The current video is a 30-second campaign montage with explicit scene fixtures, protected combat and accelerated cinematic/form timing. See `demo.md` for capture provenance; earlier input-only capture descriptions apply to the previous video.
+The current video is a 30-second campaign montage with explicit scene fixtures, protected combat and accelerated cinematic timing and scripted manual transformations. See `demo.md` for capture provenance; earlier input-only capture descriptions apply to the previous video.
+
+The soundtrack comes from a separate `--soundtrack` invocation of the generated capture harness. It performs a single stage-one music run without any scene cuts, and writes `build/game-demo/continuous-music.log`. This log, rather than the montage's interrupted gameplay music events, is passed to the stereo renderer.

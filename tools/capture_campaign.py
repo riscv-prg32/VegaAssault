@@ -27,7 +27,7 @@ else if(scene==8){stage=5;start_stage_intro();begin_boss();}
 else if(scene==9){stage=5;state=ST_WIN;timer=40;}
 else if(scene<14){stage=scene-8;start_stage_intro();begin_transform();timer=80;}
 else if(scene<16){stage=5;state=ST_COSMO;timer=scene==14?60:150;}
-else if(scene<18){stage=5;start_stage_intro();begin_play();stage_scroll=scene==16?600:1200;}
+else if(scene<18){stage=5;start_stage_intro();begin_play();update_play_input((scene==16?PRG32_BTN_DOWN:PRG32_BTN_UP)|PRG32_BTN_A);}
 else{stage=5;state=ST_ENDING;timer=scene==18?60:180;}
 grendizer_c_draw();printf("P6\\n320 200\\n255\\n");
 for(int y=0;y<200;y++)for(int x=0;x<320;x++){

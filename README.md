@@ -12,11 +12,11 @@ All code, pixel art, waveforms, SFX, and musical patterns supplied by this repos
 
 The refined sprites use inked silhouettes, shaded armor, articulated limbs and distinct boss profiles, with original geometry inspired by classic mecha drawing conventions. The 24-frame set occupies 15,260 bytes of sprite indices and palette data, including the new standalone Spazer. See the [sprite sheet](assets/sprite-sheet.png) and [graphics pipeline](docs/graphics.md).
 
-More actual gamefield captures—combat, pause and resume—are in the [screenshot gallery](docs/screenshots.md). The refreshed [Store icon](store/icon.png) and [splash artwork](store/splash.png) are retained in the 1.4.0 bundle.
+More actual gamefield captures—combat, pause and resume—are in the [screenshot gallery](docs/screenshots.md). The refreshed [Store icon](store/icon.png) and [splash artwork](store/splash.png) are retained in the 1.5.0 bundle.
 
 [Watch the 30-second gameplay demo with stereo soundtrack](docs/media/vega-assault-demo.mp4) · [Capture details and reproduction](docs/demo.md).
 
-The demo shows launch, all environments, Special Cosmo, lunar forms and the animated ending using the native renderer with synchronized software-rendered stereo music. It contains no sound effects.
+The demo shows launch, all environments, Special Cosmo, lunar forms and the animated ending using the native renderer with one continuous software-rendered stereo soundtrack. It contains no sound effects.
 
 ## Educational purpose
 
@@ -28,9 +28,9 @@ The original soundtrack uses a dramatic minor-key opening, vocal-like repeated c
 
 Starting a run plays an animated mountain/waterfall secret-base takeoff. Earth Defense is followed by Double Spazer in open sky, Marine Spazer underwater, and Drill Spazer in a rocky underground tunnel. The three support craft then assemble into **Special Cosmo** and launch to the Moon.
 
-On the Moon, Grendizer automatically alternates every 120 combat ticks between standalone Spazer, Robot, and Spazer+Robot. Double, Marine and Drill Spazer are independent, invulnerable NPC escorts with staggered supporting fire. Destroying Vega's Moon base triggers an animated destruction-and-flight-home epilogue before victory.
+In every combat stage, DOWN+A detaches Grendizer into Robot form and UP+A recombines with the stage’s Spazer. Combined flight is faster; Robot weapons deal twice the damage. The detached Spazer follows and fires as an invulnerable NPC. The Moon additionally retains Double, Marine and Drill as three independent escorts. Destroying Vega's Moon base triggers an animated destruction-and-flight-home epilogue before victory.
 
-[View the rendered campaign scenes](assets/campaign-scenes.png). These are native renderer fixtures for visual inspection, not a recorded playthrough. Generate them with `python3 tools/capture_campaign.py`. The [30-second video](docs/media/vega-assault-demo.mp4) is a scripted campaign montage with selected scenes, protected combat and accelerated cinematic timing.
+[View the rendered campaign scenes](assets/campaign-scenes.png). These are native renderer fixtures for visual inspection, not a recorded playthrough. Generate them with `python3 tools/capture_campaign.py`. The [30-second video](docs/media/vega-assault-demo.mp4) is a scripted campaign montage with selected scenes, protected combat and accelerated cinematic timing and scripted manual transformations. Its soundtrack is one uninterrupted performance, independent of scene cuts.
 
 ## Controls
 
@@ -38,6 +38,8 @@ On the Moon, Grendizer automatically alternates every 120 combat ticks between s
 - A: Screw Crusher
 - B: Double Harken
 - A+B: Space Thunder (costs energy)
+- DOWN+A: detach into Robot (slower, double weapon damage)
+- UP+A: recombine with Spazer (faster, baseline weapon damage)
 - START: start / pause / resume
 
 ## Prerequisites
@@ -110,12 +112,12 @@ The repository contains Store artwork, a manifest template, a bundle builder, an
 ./publish-store.sh
 ```
 
-The helper takes its default version from `store/manifest.template.json` (currently 1.4.0); `VERSION=...` overrides it. It uses the configured PRG32 tools to validate cartridge structure and ABI/memory requirements before creating a reproducible archive. Inspect `dist/`, then upload the generated ZIP to your CartridgeStore instance:
+The helper takes its default version from `store/manifest.template.json` (currently 1.5.0); `VERSION=...` overrides it. It uses the configured PRG32 tools to validate cartridge structure and ABI/memory requirements before creating a reproducible archive. Inspect `dist/`, then upload the generated ZIP to your CartridgeStore instance:
 
 ```sh
 curl -X POST https://YOUR-STORE/api/publish/bundle \
   -H "Authorization: Bearer $PRG32_STORE_TOKEN" \
-  -F bundle=@dist/grendizer-vega-assault-86-store-1.4.0.zip
+  -F bundle=@dist/grendizer-vega-assault-86-store-1.5.0.zip
 ```
 
 Uploads enter the Store editor-review queue. Full instructions, architecture labeling rules, and release checks are in [docs/cartridge_store.md](docs/cartridge_store.md) and [STORE_PUBLISHING.md](STORE_PUBLISHING.md).
@@ -146,7 +148,7 @@ Start with [docs/index.md](docs/index.md). The documentation covers architecture
 
 Run `sh tools/test_game.sh` for C99 gameplay regression tests with address and undefined-behavior sanitizers. The tests use the sibling PRG32 headers (or `PRG32_ROOT`) and mock portable input, graphics, and audio calls. They cover pause, terminal transitions, controls, weapons, all stage/boss transitions, deterministic restart, and enemy movement/firing fixes. Weapons require enough free slots for the entire attack before spending energy or starting cooldowns, and waves include all five enemy families. After building, run `python3 -m unittest discover -s tests -p 'test_*.py'` for audio validation and Store packaging regressions. See [docs/testing.md](docs/testing.md) for what still requires QEMU and hardware.
 
-Sprites are stored as one-byte palette indices and expanded into a fixed RGB565 buffer before drawing. This preserves the artwork and fits the portable builder's separate **32768-byte executable RAM limit**. The measured package is **30264 bytes**, with **31696 bytes** of code/data/BSS; see [SIZE_BUDGET.md](SIZE_BUDGET.md).
+Sprites are stored as one-byte palette indices and expanded into a fixed RGB565 buffer before drawing. This preserves the artwork and fits the portable builder's separate **32768-byte executable RAM limit**. The measured package is **30412 bytes**, with **31844 bytes** of code/data/BSS; see [SIZE_BUDGET.md](SIZE_BUDGET.md).
 
 ## Cartridge-size rule
 
