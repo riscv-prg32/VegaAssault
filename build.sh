@@ -18,7 +18,7 @@ python3 -m prg32 cartridge build \
   "$PROJECT_ROOT/src/game.c" \
   --portable \
   --entry-prefix grendizer_c \
-  --name grendizer-vega-assault-86 \
+  --name "Vega Assault" \
   --audio-block "$PROJECT_ROOT/build/audio.block" \
   --out "$OUT"
 size=$(wc -c < "$OUT")

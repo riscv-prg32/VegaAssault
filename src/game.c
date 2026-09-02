@@ -8,7 +8,7 @@
 // EDUCATIONAL: Documentation line retained to explain intent, provenance, or constraints.
 /*
 // EDUCATIONAL: Documentation line retained to explain intent, provenance, or constraints.
- * Grendizer: Vega Assault - 1980s Arcade Edition
+ * Vega Assault
 // EDUCATIONAL: Documentation line retained to explain intent, provenance, or constraints.
  * Unofficial non-commercial fan-game teaching project.
 // EDUCATIONAL: Documentation line retained to explain intent, provenance, or constraints.
@@ -340,7 +340,7 @@ static void shots_draw(void){int i;for(i=0;i<MAX_SHOTS;i++)if(shots[i].active){S
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void hud_draw(void){char n[12];prg32_gfx_rect(0,0,SW,18,PRG32_COLOR_BLUE);prg32_gfx_text8(4,5,"GRENDIZER",PRG32_COLOR_YELLOW,PRG32_COLOR_BLUE);prg32_gfx_text8(82,5,"S",PRG32_COLOR_WHITE,PRG32_COLOR_BLUE);num((unsigned)score,n);prg32_gfx_text8(94,5,n,PRG32_COLOR_WHITE,PRG32_COLOR_BLUE);prg32_gfx_text8(195,5,"L",PRG32_COLOR_WHITE,PRG32_COLOR_BLUE);num((unsigned)lives,n);prg32_gfx_text8(207,5,n,PRG32_COLOR_YELLOW,PRG32_COLOR_BLUE);prg32_gfx_text8(224,5,"E",PRG32_COLOR_WHITE,PRG32_COLOR_BLUE);num((unsigned)energy,n);prg32_gfx_text8(236,5,n,PRG32_COLOR_CYAN,PRG32_COLOR_BLUE);prg32_gfx_text8(258,5,"STAGE",PRG32_COLOR_WHITE,PRG32_COLOR_BLUE);num((unsigned)stage,n);prg32_gfx_text8(306,5,n,PRG32_COLOR_YELLOW,PRG32_COLOR_BLUE);}
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
-static void title_draw(void){prg32_gfx_text8(98,26,"GRENDIZER",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);prg32_gfx_text8(82,42,"VEGA ASSAULT '86",PRG32_COLOR_RED,PRG32_COLOR_BLACK);sprite_draw(148,68,24,24,grendizer_0);prg32_gfx_text8(62,108,"A  SCREW CRUSHER",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(62,122,"B  DOUBLE HARKEN",PRG32_COLOR_CYAN,PRG32_COLOR_BLACK);prg32_gfx_text8(62,136,"A+B SPACE THUNDER",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);prg32_gfx_text8(74,160,"START 1 PLAYER",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(55,186,"UNOFFICIAL FAN ARCADE",0x8410,PRG32_COLOR_BLACK);}
+static void title_draw(void){prg32_gfx_text8(116,32,"VEGA ASSAULT",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);sprite_draw(148,68,24,24,grendizer_0);prg32_gfx_text8(62,108,"A  SCREW CRUSHER",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(62,122,"B  DOUBLE HARKEN",PRG32_COLOR_CYAN,PRG32_COLOR_BLACK);prg32_gfx_text8(62,136,"A+B SPACE THUNDER",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);prg32_gfx_text8(74,160,"START 1 PLAYER",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(55,186,"UNOFFICIAL FAN ARCADE",0x8410,PRG32_COLOR_BLACK);}
 // EDUCATIONAL: Keep this state or helper private to the cartridge translation unit to minimize the exported ABI surface.
 static void attract_draw(void){if(attract_page==0){title_draw();prg32_gfx_text8(96,176,"INSERT COIN",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);}else if(attract_page==1){prg32_gfx_text8(105,30,"HOW TO PLAY",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);sprite_draw(30,62,32,24,grendizer_spazer);prg32_gfx_text8(80,64,"DESTROY VEGA FORCES",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);prg32_gfx_text8(80,82,"BUILD ENERGY",PRG32_COLOR_CYAN,PRG32_COLOR_BLACK);prg32_gfx_text8(80,100,"UNLEASH SPACE THUNDER",PRG32_COLOR_YELLOW,PRG32_COLOR_BLACK);prg32_gfx_text8(82,146,"A+B = 3 ENERGY",PRG32_COLOR_WHITE,PRG32_COLOR_BLACK);}
 // EDUCATIONAL: Handle the complementary branch of the preceding gameplay condition.

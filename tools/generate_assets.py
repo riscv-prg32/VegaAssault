@@ -148,9 +148,9 @@ def paste_sprite(dst,a,x,y,scale):
         for xx,v in enumerate(row):
             if v!=W: d.rectangle((x+xx*scale,y+yy*scale,x+(xx+1)*scale-1,y+(yy+1)*scale-1),fill=rgb565(v))
 icon=Image.new('RGB',(128,128),(3,8,24)); di=ImageDraw.Draw(icon); di.rectangle((2,2,125,125),outline=(0,150,255),width=2)
-paste_sprite(icon,robot_frame(pose=1),16,5,4); di.text((20,105),'VEGA 86',fill=(255,210,40)); icon.save('store/icon.png')
+paste_sprite(icon,robot_frame(pose=1),16,5,4); di.text((24,105),'VEGA ASSAULT',fill=(255,210,40)); icon.save('store/icon.png')
 splash=Image.new('RGB',(320,200),(2,5,18)); ds=ImageDraw.Draw(splash)
 for x,y in [(15,20),(44,58),(285,31),(252,78),(130,18),(210,45)]: ds.point((x,y),fill=(180,220,255))
-ds.ellipse((220,-35,355,100),fill=(8,35,95),outline=(20,100,220)); paste_sprite(splash,robot_frame(spazer=True,pose=1),24,35,6)
-ds.text((120,40),'GRENDIZER',fill=(255,195,20)); ds.text((122,58),"VEGA ASSAULT '86",fill=(90,190,255)); ds.text((122,82),'PRG32 EDUCATIONAL FAN GAME',fill=(220,220,220)); ds.text((122,102),'PRESS START',fill=(255,255,255)); splash.save('store/splash.png')
+ds.ellipse((220,-35,355,100),fill=(8,35,95),outline=(20,100,220)); paste_sprite(splash,robot_frame(spazer=True,pose=1),24,50,5)
+ds.text((120,25),'VEGA ASSAULT',fill=(255,195,20)); ds.text((122,172),'PRG32 EDUCATIONAL FAN GAME',fill=(220,220,220)); ds.text((122,186),'PRESS START',fill=(255,255,255)); splash.save('store/splash.png')
 print('assets',len(assets),'indexed_sprite_bytes',sum(len(a)*len(a[0]) for _,a in assets),'palette_bytes',len(palette)*2,'decode_buffer_bytes',48*24*2)

@@ -1,6 +1,6 @@
 # Documentation Index
 
-This directory is the academic documentation set for *Grendizer: Vega Assault '86*. It treats the cartridge as a case study in constrained embedded game design.
+This directory is the academic documentation set for *Vega Assault*. It treats the cartridge as a case study in constrained embedded game design.
 
 1. [Architecture](architecture.md)
 2. [Educational Design](educational_design.md)

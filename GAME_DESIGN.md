@@ -1,4 +1,4 @@
-# Game Design — Grendizer: Vega Assault '86
+# Game Design — Vega Assault
 
 ## Design target
 

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Rename the public game title, cartridge display name, title screen and Store artwork to Vega Assault; preserve existing identifiers and entry points.
+
 - Verify an ESP32-C3 QEMU boot and first-stage input/rendering with Espressif QEMU; replace the README preview with a real emulator framebuffer capture.
 - Add QEMU machine-support checks to distinguish generic QEMU from the Espressif build.
 - Reject malformed audio authoring data before packing, preserving all current runtime audio bytes.

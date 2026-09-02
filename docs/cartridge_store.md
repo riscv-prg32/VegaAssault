@@ -24,3 +24,7 @@ The upload enters editor review. Verify title, version, author, icon, splash, ar
 The bundler imports the current PRG32 parser and runtime-contract validator from `PRG32_ROOT`, defaulting to the sibling PRG32 checkout. It rejects malformed/truncated cartridges, packages above 131072 bytes, and incompatible ABI or executable-memory requirements before replacing an existing ZIP. Passing structural validation does not certify runtime behavior on either target.
 
 The default version and ZIP filename follow `store/manifest.template.json`; `VERSION=2.0.0-rc.1 ./publish-store.sh` selects an explicit version. ZIP timestamps and permissions are fixed for repeatability. The archive is assembled in a temporary file and then renamed; invalid input leaves a previous archive intact. Output and checksum paths cannot overwrite input cartridges. `--esp32c6` and `--qemu` remain distinct manifest entries, even when both refer to a portable binary. Only include target labels after the corresponding host validation.
+
+## Display name
+
+The public title and cartridge header name are **Vega Assault**. The established Store ID, artifact filenames, and `grendizer_c` entry-point prefix remain stable so existing listings and build integrations continue to identify the same cartridge. Grendizer remains the playable character's name.

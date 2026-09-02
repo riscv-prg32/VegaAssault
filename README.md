@@ -1,4 +1,4 @@
-# PRG32 — Grendizer: Vega Assault '86
+# Vega Assault
 
 An unofficial, non-commercial, educational PRG32 C fan-game inspired by the world of Go Nagai's *UFO Robot Grendizer*. The cartridge combines an arcade-style finite-state machine, animated RGB565 sprites, Grendizer/Spazer transformations, Screw Crusher, Double Harken and Space Thunder, multiple enemy families, three terrain stages, boss-specific patterns, and an original stereo chiptune/SFX system.
 
@@ -126,7 +126,7 @@ Start with [docs/index.md](docs/index.md). The documentation covers architecture
 
 Run `sh tools/test_game.sh` for C99 gameplay regression tests with address and undefined-behavior sanitizers. The tests use the sibling PRG32 headers (or `PRG32_ROOT`) and mock portable input, graphics, and audio calls. They cover pause, terminal transitions, controls, weapons, all stage/boss transitions, deterministic restart, and enemy movement/firing fixes. Weapons require enough free slots for the entire attack before spending energy or starting cooldowns, and waves include all five enemy families. After building, run `python3 -m unittest discover -s tests -p 'test_*.py'` for audio validation and Store packaging regressions. See [docs/testing.md](docs/testing.md) for what still requires QEMU and hardware.
 
-Sprites are stored as one-byte palette indices and expanded into a fixed RGB565 buffer before drawing. This preserves the artwork and fits the portable builder's separate **32768-byte executable RAM limit**. The measured package is **26368 bytes**, with **29220 bytes** of code/data/BSS; see [SIZE_BUDGET.md](SIZE_BUDGET.md).
+Sprites are stored as one-byte palette indices and expanded into a fixed RGB565 buffer before drawing. This preserves the artwork and fits the portable builder's separate **32768-byte executable RAM limit**. The measured package is **26336 bytes**, with **29188 bytes** of code/data/BSS; see [SIZE_BUDGET.md](SIZE_BUDGET.md).
 
 ## Cartridge-size rule
 
