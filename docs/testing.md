@@ -10,7 +10,7 @@ Run `sh tools/test_game.sh` with a sanitizer-capable C compiler and a sibling PR
 
 Regression cases cover attract/title input, stage introduction and transformation, movement limits, all weapons, every boss transition, game-over/victory recovery, paused timers and boss rendering, simultaneous boss death/player danger, last-life enemy escape, Harken reversal, crawler boundaries, non-power-of-two firing cadence, bounded boss motion, and deterministic restart.
 
-## Observed local results (2026-09-02)
+## Observed validation results (2026-09-02)
 
 - Host regression suite and educational checker passed.
 - Portable RV32 build passed: 26368-byte package; 29220-byte code/data/BSS requirement.
@@ -18,7 +18,7 @@ Regression cases cover attract/title input, stage introduction and transformatio
 - Packed audio matched the current upstream audio packer's output byte for byte.
 - Generated Store ZIP passed CRC checks; its manifest and cartridge parsed with current PRG32 tooling and the bundled cartridge matched the build output.
 
-ESP-IDF 5.4 loaded from `/Users/raffaelemontella/esp-idf/export.sh`. Subsequent investigation found generic QEMU 11.1.1 without ESP32-C3 support and installed the compatible Espressif build. The isolated ESP32-C3 host now builds and boots; framebuffer captures verify attract/title, first-stage gameplay, firing, and pause. See [QEMU results](qemu.md#observed-validation) for framework revision, capture provenance, and audio transport observations. Physical-board playthroughs, stereo listening, full target gameplay coverage and frame timing remain unverified.
+Validation used ESP-IDF 5.4 and the compatible Espressif QEMU build. The ESP32-C3 host builds and boots; framebuffer captures verify attract/title, first-stage gameplay, firing, and pause. See [QEMU results](qemu.md#observed-validation) for framework revision, capture provenance, and audio transport observations. Physical-board playthroughs, stereo listening, full target gameplay coverage and frame timing remain unverified.
 
 ## Second review regression checks
 
