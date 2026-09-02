@@ -1,19 +1,107 @@
 #!/usr/bin/env python3
-import json,struct,sys
+"""Pack validated original samples and tracker events into a PRG32 AUD0 block."""
+import argparse
+import json
 from pathlib import Path
-H=struct.Struct("<4sHHHHHHIIIIII"); S=struct.Struct("<IIIIHBB"); I=struct.Struct("<HBBBBBB"); T=struct.Struct("<II"); E=struct.Struct("<BBBB")
-def a4(b):
- while len(b)%4:b.append(0)
+import struct
+
+H = struct.Struct('<4sHHHHHHIIIIII')
+S = struct.Struct('<IIIIHBB')
+I = struct.Struct('<HBBBBBB')
+T = struct.Struct('<II')
+E = struct.Struct('<BBBB')
+COMMANDS = {'NOTE_ON': 1, 'NOTE_OFF': 2, 'SET_VOLUME': 3, 'SET_PAN': 4,
+            'SET_TEMPO': 5, 'PLAY_SAMPLE': 6, 'JUMP': 7, 'END': 255}
+
+
+def integer(value, low, high, field):
+    if type(value) is not int or not low <= value <= high:
+        raise ValueError(f'{field}: expected integer in {low}..{high}, got {value!r}')
+    return value
+
+
+def aligned_extend(block, payload):
+    offset = len(block)
+    block.extend(payload)
+    block.extend(bytes((-len(block)) % 4))
+    return offset
+
+
+def pack_audio(config, base_dir):
+    samples = config.get('samples', [])
+    instruments = config.get('instruments', [])
+    tracks = config.get('tracks', [])
+    for name, items, capacity in [('samples', samples, 64), ('instruments', instruments, 32), ('tracks', tracks, 16)]:
+        if not isinstance(items, list) or len(items) > capacity:
+            raise ValueError(f'{name}: expected a list with at most {capacity} entries')
+    data, sample_descs, instrument_descs, track_descs, events = (bytearray() for _ in range(5))
+    for index, sample in enumerate(samples):
+        raw = (base_dir / sample['file']).read_bytes()
+        if not raw:
+            raise ValueError(f'samples[{index}]: sample must not be empty')
+        flags = integer(sample.get('flags', 0), 0, 1, 'sample flags')
+        if 'loop' in sample and type(sample['loop']) is not bool:
+            raise ValueError('sample loop: expected boolean')
+        if sample.get('loop', False):
+            flags |= 1
+        start = integer(sample.get('loop_start', 0), 0, len(raw), 'loop_start')
+        end = integer(sample.get('loop_end', len(raw) if flags else 0), 0, len(raw), 'loop_end')
+        if flags and start >= end:
+            raise ValueError(f'samples[{index}]: loop_start must be smaller than loop_end')
+        note = integer(sample.get('base_note', 60), 1, 127, 'base_note')
+        sample_descs.extend(S.pack(len(data), len(raw), start, end, note, flags, 0))
+        data.extend(raw)
+    for instrument in instruments:
+        sample_id = integer(instrument.get('sample_id', 0), 0, len(samples)-1, 'sample_id')
+        volume = integer(instrument.get('default_volume', 255), 0, 255, 'default_volume')
+        pan = integer(instrument.get('default_pan', 0), -64, 63, 'default_pan')
+        envelope = [integer(instrument.get(key, default), 0, 255, key)
+                    for key, default in [('attack', 0), ('decay', 0), ('sustain', 255), ('release', 0)]]
+        instrument_descs.extend(I.pack(sample_id, volume, pan & 255, *envelope))
+    for track in tracks:
+        sequence = track.get('events', [])
+        if not isinstance(sequence, list) or not sequence:
+            raise ValueError('track events: expected a nonempty list')
+        track_descs.extend(T.pack(len(events)//E.size, len(sequence)))
+        for event in sequence:
+            command = event.get('command', 'END')
+            if isinstance(command, str):
+                if command.upper() not in COMMANDS:
+                    raise ValueError(f'unknown audio command: {command}')
+                command = COMMANDS[command.upper()]
+            if type(command) is not int or command not in COMMANDS.values():
+                raise ValueError(f'unknown audio command: {command!r}')
+            delta = integer(event.get('delta', event.get('delta_ticks', 0)), 0, 255, 'event delta')
+            arg0 = integer(event.get('arg0', 0), 0, 255, 'event arg0')
+            arg1 = integer(event.get('arg1', 0), -64 if command == 4 else 0,
+                           63 if command == 4 else 255, 'event arg1')
+            events.extend(E.pack(delta, command, arg0, arg1 & 255))
+    block = bytearray(H.size)
+    offsets = [aligned_extend(block, payload) for payload in
+               [sample_descs, instrument_descs, track_descs, events, data]]
+    block[:H.size] = H.pack(b'AUD0', 1, H.size, len(samples), len(instruments), len(tracks),
+                           0, *offsets, len(block))
+    return bytes(block)
+
+
 def main():
- p=Path(sys.argv[1]); out=Path(sys.argv[2]); c=json.loads(p.read_text()); data=bytearray(); sd=bytearray()
- for s in c.get("samples",[]):
-  r=(p.parent/s["file"]).read_bytes(); o=len(data); data.extend(r); f=1 if s.get("loop",False) else int(s.get("flags",0)); le=int(s.get("loop_end",len(r) if f else 0)); sd.extend(S.pack(o,len(r),int(s.get("loop_start",0)),le,int(s.get("base_note",60)),f,0))
- ids=bytearray()
- for i in c.get("instruments",[]): ids.extend(I.pack(int(i.get("sample_id",0)),int(i.get("default_volume",255)),int(i.get("default_pan",0))&255,int(i.get("attack",0)),int(i.get("decay",0)),int(i.get("sustain",255)),int(i.get("release",0))))
- td=bytearray(); ev=bytearray(); cmds={"NOTE_ON":1,"NOTE_OFF":2,"SET_VOLUME":3,"SET_PAN":4,"SET_TEMPO":5,"PLAY_SAMPLE":6,"JUMP":7,"END":255}
- for tr in c.get("tracks",[]):
-  o=len(ev)//4; es=tr.get("events",[])
-  for e in es: ev.extend(E.pack(int(e.get("delta",e.get("delta_ticks",0)))&255, cmds.get(str(e.get("command","END")).upper(),int(e.get("command",255)) if isinstance(e.get("command"),int) else 255)&255,int(e.get("arg0",0))&255,int(e.get("arg1",0))&255))
-  td.extend(T.pack(o,len(es)))
- b=bytearray(b"\0"*H.size); so=len(b);b.extend(sd);a4(b);io=len(b);b.extend(ids);a4(b);to=len(b);b.extend(td);a4(b);eo=len(b);b.extend(ev);a4(b);do=len(b);b.extend(data);a4(b);b[:H.size]=H.pack(b"AUD0",1,H.size,len(c.get("samples",[])),len(c.get("instruments",[])),len(c.get("tracks",[])),0,so,io,to,eo,do,len(b));out.parent.mkdir(parents=True,exist_ok=True);out.write_bytes(b);print(len(b))
-if __name__=="__main__": main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('input', type=Path)
+    parser.add_argument('output', type=Path)
+    args = parser.parse_args()
+    try:
+        config = json.loads(args.input.read_text())
+        if not isinstance(config, dict):
+            raise ValueError('audio configuration must be a JSON object')
+        block = pack_audio(config, args.input.parent)
+        if args.output.resolve() == args.input.resolve():
+            raise ValueError('output must not overwrite input configuration')
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_bytes(block)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, struct.error) as exc:
+        parser.error(str(exc))
+    print(len(block))
+
+
+if __name__ == '__main__':
+    main()

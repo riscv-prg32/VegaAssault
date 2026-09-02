@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Verify an ESP32-C3 QEMU boot and first-stage input/rendering with Espressif QEMU; replace the README preview with a real emulator framebuffer capture.
+- Add QEMU machine-support checks to distinguish generic QEMU from the Espressif build.
+- Reject malformed audio authoring data before packing, preserving all current runtime audio bytes.
+
 - Make fixed-pool weapon attacks atomic: no partial pairs or resource charges when slots are unavailable.
 - Restore the gunner to waves with a firing pattern and constrain blade movement to the viewport.
 - Validate cartridge structure and runtime contracts before Store bundling; use the manifest version and deterministic ZIP metadata.

@@ -4,9 +4,9 @@ An unofficial, non-commercial, educational PRG32 C fan-game inspired by the worl
 
 All code, pixel art, waveforms, SFX, and musical patterns supplied by this repository are original project material. No anime frames, manga scans, production logos, commercial-game sprites, soundtrack recordings, or note-for-note transcriptions are included. Third-party names, characters, designs, and trademarks remain the property of their respective rights holders.
 
-![Vega Assault gameplay: Grendizer firing Screw Crusher at a first-stage enemy wave](assets/gameplay.png)
+![Vega Assault gameplay: Grendizer firing Screw Crusher at a first-stage enemy wave](assets/qemu-gameplay.png)
 
-*Actual gameplay rendered from the cartridge's C update/draw functions with PRG32's software renderer. Host capture of the 320×200 viewport, enlarged 3× without smoothing; see [capture instructions](docs/graphics.md#gameplay-capture).*
+*Actual ESP32-C3 QEMU gameplay capture, including the host display bands, enlarged 2× without smoothing. See [QEMU validation](docs/qemu.md#observed-validation) and the [reproducible native capture](docs/graphics.md#gameplay-capture).*
 
 ## Educational purpose
 
@@ -40,12 +40,12 @@ From this repository:
 PRG32_ROOT=/absolute/path/to/PRG32 ./build.sh
 ```
 
-The script checks educational comments, compiles C99 with `-Wall -Wextra -Werror`, repacks audio, invokes the PRG32 portable cartridge builder, and rejects any final package larger than **131072 bytes**. Export the ESP-IDF toolchain first so `riscv32-esp-elf-gcc` is on PATH. In the configured local workspace, initialize the toolchain with `source /Users/raffaelemontella/esp-idf/export.sh` and use `PRG32_ROOT=/Users/raffaelemontella/devel/riscv-prg32/PRG32`. Sprite changes require `python3 tools/generate_assets.py` (Pillow required) before building. The script can be invoked from another directory; relative `OUT` paths are resolved against this repository, and absolute paths are supported. The cartridge exports `grendizer_c_init`, `grendizer_c_update`, and `grendizer_c_draw`.
+The audio packer rejects invalid sample loops, instrument references, pan values, unknown commands and overflowing event fields instead of silently changing the sound data. The script checks educational comments, compiles C99 with `-Wall -Wextra -Werror`, repacks audio, invokes the PRG32 portable cartridge builder, and rejects any final package larger than **131072 bytes**. Export the ESP-IDF toolchain first so `riscv32-esp-elf-gcc` is on PATH. In the configured local workspace, initialize the toolchain with `source /Users/raffaelemontella/esp-idf/export.sh` and use `PRG32_ROOT=/Users/raffaelemontella/devel/riscv-prg32/PRG32`. Sprite changes require `python3 tools/generate_assets.py` (Pillow required) before building. The script can be invoked from another directory; relative `OUT` paths are resolved against this repository, and absolute paths are supported. The cartridge exports `grendizer_c_init`, `grendizer_c_update`, and `grendizer_c_draw`.
 
 ## Step-by-step: run on QEMU
 
 1. Export your ESP-IDF environment.
-2. Ensure QEMU is installed (`python $IDF_PATH/tools/idf_tools.py install qemu-riscv32` when needed).
+2. Install Espressif QEMU (`python "$IDF_PATH/tools/idf_tools.py" install qemu-riscv32` when needed), source ESP-IDF `export.sh` again, then run `python3 tools/check_qemu.py` from this repository. Generic QEMU may have the same executable name but lack the required `esp32c3` machine.
 3. Build the PRG32 QEMU host:
    ```sh
    cd /path/to/PRG32
@@ -124,7 +124,7 @@ Start with [docs/index.md](docs/index.md). The documentation covers architecture
 
 ## Local verification
 
-Run `sh tools/test_game.sh` for C99 gameplay regression tests with address and undefined-behavior sanitizers. The tests use the sibling PRG32 headers (or `PRG32_ROOT`) and mock portable input, graphics, and audio calls. They cover pause, terminal transitions, controls, weapons, all stage/boss transitions, deterministic restart, and enemy movement/firing fixes. Weapons require enough free slots for the entire attack before spending energy or starting cooldowns, and waves include all five enemy families. After building, run `python3 -m unittest discover -s tests -p 'test_*.py'` for Store packaging regressions. See [docs/testing.md](docs/testing.md) for what still requires QEMU and hardware.
+Run `sh tools/test_game.sh` for C99 gameplay regression tests with address and undefined-behavior sanitizers. The tests use the sibling PRG32 headers (or `PRG32_ROOT`) and mock portable input, graphics, and audio calls. They cover pause, terminal transitions, controls, weapons, all stage/boss transitions, deterministic restart, and enemy movement/firing fixes. Weapons require enough free slots for the entire attack before spending energy or starting cooldowns, and waves include all five enemy families. After building, run `python3 -m unittest discover -s tests -p 'test_*.py'` for audio validation and Store packaging regressions. See [docs/testing.md](docs/testing.md) for what still requires QEMU and hardware.
 
 Sprites are stored as one-byte palette indices and expanded into a fixed RGB565 buffer before drawing. This preserves the artwork and fits the portable builder's separate **32768-byte executable RAM limit**. The measured package is **26368 bytes**, with **29220 bytes** of code/data/BSS; see [SIZE_BUDGET.md](SIZE_BUDGET.md).
 
