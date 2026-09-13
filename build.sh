@@ -4,7 +4,13 @@ set -eu
 PROJECT_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PRG32_ROOT=${PRG32_ROOT:-"$PROJECT_ROOT/../PRG32"}
 PRG32_ROOT=$(CDPATH= cd -- "$PRG32_ROOT" && pwd)
-OUT=${OUT:-build/grendizer-vega-assault-86.prg32}
+ARCHITECTURE=${PRG32_ARCHITECTURE:-esp32c6}
+case "$ARCHITECTURE" in
+  esp32c6) DEFAULT_OUT=build/grendizer-vega-assault-86.prg32 ;;
+  qemu) DEFAULT_OUT=build/grendizer-vega-assault-86-qemu.prg32 ;;
+  *) echo 'ERROR: PRG32_ARCHITECTURE must be esp32c6 or qemu' >&2; exit 2 ;;
+esac
+OUT=${OUT:-$DEFAULT_OUT}
 case "$OUT" in /*) ;; *) OUT="$PROJECT_ROOT/$OUT" ;; esac
 cd "$PROJECT_ROOT"
 mkdir -p build "$(dirname -- "$OUT")"
@@ -17,6 +23,7 @@ cd "$PRG32_ROOT"
 python3 -m prg32 cartridge build \
   "$PROJECT_ROOT/src/game.c" \
   --portable \
+  --architecture "$ARCHITECTURE" \
   --entry-prefix grendizer_c \
   --name "Vega Assault" \
   --audio-block "$PROJECT_ROOT/build/audio.block" \

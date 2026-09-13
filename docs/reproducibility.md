@@ -6,6 +6,11 @@ For academic work, record the Git commit of this repository, the PRG32 commit, E
 
 Build paths are anchored to the repository. A relative `OUT` is relative to the repository; an absolute `OUT` is used unchanged. `PRG32_ROOT` may be absolute or relative to the invoking shell. `publish-store.sh` preserves spaces in cartridge paths using quoted positional arguments; relative cartridge paths resolve from the repository. Bundling creates local files and does not publish externally.
 
+Set `PRG32_ARCHITECTURE=esp32c6` or `qemu` for the corresponding portable build.
+The default ESP32-C6 output path is unchanged; QEMU uses a separate default
+path. Record the selected architecture alongside the PRG32 commit and package
+checksum.
+
 Sprites must be regenerated explicitly after generator edits; builds check annotations and repack audio. Palette ordering is sorted to keep generated C deterministic. PNG encoding can vary with Pillow versions even when decoded image pixels match. Store ZIP entries now have fixed timestamps, permissions, ordering and compression mode, so identical inputs produce identical bytes within the same Python/zlib environment even when source modification times differ. Record dependency versions alongside release checksums.
 
 

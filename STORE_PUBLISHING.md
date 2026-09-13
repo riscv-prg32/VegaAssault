@@ -26,7 +26,8 @@ PRG32_ROOT=/path/to/PRG32 ./build.sh
 To include a QEMU-validated cartridge:
 
 ```sh
-QEMU_PRG32=/path/to/game-qemu.prg32 ./publish-store.sh
+PRG32_ARCHITECTURE=qemu PRG32_ROOT=/path/to/PRG32 ./build.sh
+QEMU_PRG32=build/grendizer-vega-assault-86-qemu.prg32 ./publish-store.sh
 ```
 
 The packer rejects cartridges larger than 131072 bytes and writes a SHA-256 sidecar next to the Store ZIP.

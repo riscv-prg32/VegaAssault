@@ -62,6 +62,11 @@ From this repository:
 PRG32_ROOT=/absolute/path/to/PRG32 ./build.sh
 ```
 
+The default builds the ESP32-C6 cartridge at
+`build/grendizer-vega-assault-86.prg32`. Build the QEMU variant separately with
+`PRG32_ARCHITECTURE=qemu PRG32_ROOT=/absolute/path/to/PRG32 ./build.sh`; its
+default output is `build/grendizer-vega-assault-86-qemu.prg32`.
+
 The audio packer rejects invalid sample loops, instrument references, pan values, unknown commands and overflowing event fields instead of silently changing the sound data. The script checks educational comments, compiles C99 with `-Wall -Wextra -Werror`, repacks audio, invokes the PRG32 portable cartridge builder, and rejects any final package larger than **131072 bytes**. Export the ESP-IDF toolchain first so `riscv32-esp-elf-gcc` is on PATH. Initialize the toolchain with `source /path/to/esp-idf/export.sh` and set `PRG32_ROOT=/path/to/PRG32`, replacing both placeholders with your installation paths. Sprite changes require `python3 tools/generate_assets.py` (Pillow required) before building. The script can be invoked from another directory; relative `OUT` paths are resolved against this repository, and absolute paths are supported. The cartridge exports `grendizer_c_init`, `grendizer_c_update`, and `grendizer_c_draw`.
 
 ## Step-by-step: run on QEMU
@@ -73,11 +78,11 @@ The audio packer rejects invalid sample loops, instrument references, pan values
    cd /path/to/PRG32
    python3 -m prg32 qemu build
    ```
-4. Build this game using the command above.
+4. Build the QEMU variant with `PRG32_ARCHITECTURE=qemu PRG32_ROOT=/path/to/PRG32 ./build.sh`.
 5. Stage the resulting `.prg32` into QEMU flash:
    ```sh
    cd /path/to/PRG32
-   python3 -m prg32 qemu upload /path/to/this-project/build/grendizer-vega-assault-86.prg32
+   python3 -m prg32 qemu upload /path/to/this-project/build/grendizer-vega-assault-86-qemu.prg32
    ```
 6. Launch:
    ```sh
